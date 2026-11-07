@@ -430,10 +430,19 @@ $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinut
   btn.disabled = true; btn.textContent = "Đang viết biên bản…"; S.busy = true;
   try{
     const user = `${INSTR}\n\nThông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.\n\n${SCHEMA}\n\nLỜI THOẠI:\n${transcriptText(m)}`;
-    const r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
-      body: JSON.stringify({model:S.model, max_tokens:8000, messages:[{role:"user", content:user}]})});
-    const j = await r.json().catch(()=>({}));
-    if (!r.ok) throw new Error((j.error && (j.error.message||j.error)) || ("Lỗi " + r.status));
+    let r, raw = "", j = {};
+    for (let attempt = 1; attempt <= 4; attempt++){
+      r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
+        body: JSON.stringify({model:S.model, max_tokens:8000, messages:[{role:"user", content:user}]})});
+      raw = await r.text(); try{ j = JSON.parse(raw); }catch(e){ j = {}; }
+      if (r.status !== 429 && r.status < 500) break;
+      if (attempt === 4) break;
+      const wait = Math.min(60, parseInt(r.headers.get("retry-after")) || 15*attempt);
+      for (let s = wait; s > 0; s--){ btn.textContent = `Dịch vụ đang bận, thử lại sau ${s} giây (lần ${attempt+1}/4)…`; await new Promise(z=>setTimeout(z,1000)); }
+      btn.textContent = "Đang viết biên bản…";
+    }
+    if (!r.ok){ const msg = (j.error && (j.error.message || (typeof j.error === "string" ? j.error : JSON.stringify(j.error)))) || j.message || raw.slice(0,300);
+      throw new Error("Lỗi " + r.status + (msg ? " – " + msg : "")); }
     let txt = j.choices?.[0]?.message?.content || ""; if (Array.isArray(txt)) txt = txt.map(c=>c.text||"").join("");
     const s = txt.indexOf("{"), e = txt.lastIndexOf("}"); const obj = JSON.parse(txt.slice(s, e+1));
     m.minutes = obj; await saveMeeting(m); openMeeting(m); toast("Đã tạo biên bản");
