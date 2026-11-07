@@ -205,6 +205,13 @@ details[open].card summary::after{content:"－"}
 .cxbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .cxbtns button{padding:9px 14px;font-size:14px}
 .cx input{background:var(--card)}
+.cbsteps{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14.5px}
+.cbsteps button{padding:2px 6px;font-size:13.5px}
+.btnlink{display:inline-flex;align-items:center;justify-content:center;border-radius:16px;padding:14px 18px;background:var(--soft);color:var(--fg);font-weight:600;text-decoration:none;flex:1}
+.cxbtns>.primary{flex:1}
+.card.claude{border:2px solid var(--accent);scroll-margin-top:calc(env(safe-area-inset-top,0px) + 120px)}
+#confirmCard{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 120px)}
+#cbText,#cbPrompt{min-height:110px}
 .card.okc{background:var(--ok-soft);box-shadow:none}
 .card.okc .cx{border-top-color:rgba(47,154,114,.25)}
 .utt.hl .bubble{outline:2.5px solid var(--accent);animation:hlp 1.6s ease-out}
@@ -271,7 +278,13 @@ details[open].card summary::after{content:"－"}
         <input id="apiKey" type="password" autocomplete="off" placeholder="Dán khoá API vào đây">
       </label>
       <p class="muted">Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
-      <label>Mô hình viết biên bản
+      <label>Cách viết biên bản
+        <select id="writer">
+          <option value="claude">Claude Pro (sao chép – dán, miễn phí)</option>
+          <option value="aai">AssemblyAI tự động (tốn phí)</option>
+        </select>
+      </label>
+      <label id="llmModelLbl">Mô hình khi viết tự động
         <select id="llmModel">
           <option value="claude-sonnet-4-6">Claude Sonnet (khuyên dùng)</option>
           <option value="claude-haiku-4-5-20251001">Claude Haiku (rẻ hơn)</option>
@@ -373,6 +386,22 @@ details[open].card summary::after{content:"－"}
       <button data-tab="tr">Lời thoại</button>
       <button data-tab="spk">Người nói</button>
     </div>
+    <div class="card claude" id="claudeBox" hidden>
+      <div class="cxbtns" style="justify-content:space-between;flex-wrap:nowrap"><h2 id="cbTitle" style="flex:1">Viết biên bản bằng Claude</h2><button class="ghost" id="cbClose">Đóng</button></div>
+      <ol class="cbsteps">
+        <li><b>Đã sao chép</b> yêu cầu và lời thoại. <button class="ghost" id="cbRecopy">Sao chép lại</button></li>
+        <li>Bấm <b>Mở Claude</b>, tạo cuộc trò chuyện mới, <b>dán</b> vào và gửi. Nên chọn mô hình mạnh nhất (ví dụ Opus).</li>
+        <li>Khi Claude trả lời xong, bấm nút <b>Sao chép</b> ở góc khung mã (hoặc giữ tay lên câu trả lời → Sao chép).</li>
+        <li>Quay lại đây, bấm <b>Dán kết quả</b>.</li>
+      </ol>
+      <div class="cxbtns">
+        <a class="btnlink" id="cbOpen" href="https://claude.ai/new" target="_blank" rel="noopener">Mở Claude</a>
+        <button class="primary" id="cbPaste">Dán kết quả</button>
+      </div>
+      <textarea id="cbText" placeholder="Nếu nút Dán không hoạt động: chạm vào đây, giữ tay rồi chọn Dán" hidden></textarea>
+      <button id="cbImport" hidden>Nhập kết quả</button>
+      <textarea id="cbPrompt" readonly hidden></textarea>
+    </div>
     <div class="progress" id="minProg" hidden><div class="spinner"></div><span id="minProgText"></span></div>
     <p class="err" id="minErr"></p>
     <div id="tab_min" class="stack"></div>
@@ -384,7 +413,7 @@ details[open].card summary::after{content:"－"}
       <datalist id="peopleList"></datalist>
       <button class="primary" id="btnSaveNames">Lưu tên người nói</button>
     </div>
-    <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Sao chép lời thoại để dán vào Claude</button>
+    <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Chỉ sao chép lời thoại</button>
     <button class="danger" id="btnDel">Xoá cuộc họp này</button>
     <p class="err" id="delConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
   </div>
@@ -428,7 +457,7 @@ function show(id){ screens.forEach(s => $(s).hidden = s !== id); S.screen = id;
   window.scrollTo(0,0); }
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; t.style.animation="none"; t.offsetHeight; t.style.animation="";
   clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true,2600); }
-const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", audio:null, audioName:"", cur:null, tab:"min", all:[] };
+const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", writer:"claude", audio:null, audioName:"", cur:null, tab:"min", all:[] };
 const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const withIcon = (tag, cls, icon, txt) => { const e = el(tag, cls); e.innerHTML = ICON[icon] || ""; e.append(document.createTextNode(txt)); return e; };
 
@@ -494,7 +523,7 @@ $("btnUnlock").onclick = async () => {
       const k = await deriveKey(pin, unb64(lsGet("bb_salt")));
       S.key = k; try{ await dec(JSON.parse(lsGet("bb_check"))); }catch(e){ S.key=null; $("pin").value=""; drawDots(); lockText(); return shake("Sai mã PIN, thử lại."); }
     }
-    const cfg = lsGet("bb_cfg"); if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey=c.apiKey||""; S.model=c.model||S.model; }catch(e){} }
+    const cfg = lsGet("bb_cfg"); if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey=c.apiKey||""; S.model=c.model||S.model; S.writer=c.writer||"claude"; }catch(e){} }
     if (!S.apiKey) openSettings(); else openHome();
   }catch(e){ $("lockErr").textContent = "Lỗi: " + e.message; }
   finally{ S.unlocking = false; }
@@ -510,15 +539,16 @@ $("btnBack").onclick = () => { if (S.rec) return toast("Hãy dừng ghi âm trư
 $("btnSettings").onclick = openSettings;
 
 /* ---------- Cài đặt ---------- */
-function openSettings(){ $("apiKey").value = S.apiKey; $("llmModel").value = S.model;
+function openSettings(){ $("apiKey").value = S.apiKey; $("llmModel").value = S.model; $("writer").value = S.writer; $("llmModelLbl").hidden = S.writer !== "aai";
   $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true; show("scrSettings"); }
+$("writer").onchange = () => $("llmModelLbl").hidden = $("writer").value !== "aai";
 $("btnSaveKey").onclick = async () => {
   const k = $("apiKey").value.trim(); if (!k) return $("keyStatus").textContent = "Chưa dán khoá.";
   $("keyStatus").textContent = "Đang kiểm tra khoá…";
   try{ const r = await fetch(AAI+"/v2/transcript?limit=1", {headers:{authorization:k}});
     if (r.status===401) return $("keyStatus").textContent = "Khoá không đúng. Hãy sao chép lại từ trang AssemblyAI.";
   }catch(e){ return $("keyStatus").textContent = "Không kết nối được mạng: " + e.message; }
-  S.apiKey = k; S.model = $("llmModel").value; lsSet("bb_cfg", JSON.stringify(await enc({apiKey:k, model:S.model})));
+  S.apiKey = k; S.model = $("llmModel").value; S.writer = $("writer").value; lsSet("bb_cfg", JSON.stringify(await enc({apiKey:k, model:S.model, writer:S.writer})));
   toast("Đã lưu cài đặt"); openHome();
 };
 $("btnWipe").onclick = async () => {
@@ -654,7 +684,7 @@ function avatar(m, s, cls){ const i = spkIndex(m, s), a = el("div", "av" + (cls 
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 function setTab(t){ S.tab = t; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
   ["min","task","tr","spk"].forEach(x => $("tab_"+x).hidden = x !== t); }
-function openMeeting(m, tab, keepScroll){ if (tab) S.tab = tab; const y = window.scrollY; S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent=""; $("minProg").hidden = true;
+function openMeeting(m, tab, keepScroll){ if (tab) S.tab = tab; if (!S.claude || S.claude.id !== m.id){ $("claudeBox").hidden = true; S.claude = null; } const y = window.scrollY; S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent=""; $("minProg").hidden = true;
   $("vTitle").textContent = m.title;
   const ch = $("vChips"); ch.innerHTML = "";
   if (m.date) ch.append(withIcon("span","chip","cal", fmtDate(m.date)));
@@ -745,7 +775,57 @@ const NOTE_SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ
 "ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],"can_xac_nhan":[{"noi_dung":"","thoi_diem":"hh:mm:ss"}]}
 Ghi ngắn gọn, đủ ý, không lặp lại. Mỗi mục tối đa 1–2 câu.`;
 const CHUNK_CHARS = 7000;
+const CLAUDE_FMT = `\n\nĐỊNH DẠNG TRẢ LỜI: chỉ trả lời bằng MỘT khối mã \`\`\`json ... \`\`\` duy nhất chứa đối tượng JSON, không viết gì thêm trước hay sau. Không tạo file, không dùng artifact.`;
+function genPrompt(m){ const info = `Thông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
+  return `${INSTR}\nĐọc KỸ TOÀN BỘ lời thoại từ đầu đến cuối, không bỏ sót đầu việc, quyết định, con số, hạn chót. Ghi đủ ý nhưng gọn.\n\n${info}\n\n${SCHEMA}${CLAUDE_FMT}\n\nLỜI THOẠI:\n${transcriptText(m)}`; }
+function applyPrompt(m, items){ const bb = JSON.parse(JSON.stringify(m.minutes)); delete bb.can_xac_nhan;
+  const xn = items.map(q => q.sua ? {diem_can_xac_nhan:q.noi_dung, thong_tin_dung:q.sua} : {diem_can_xac_nhan:q.noi_dung, ket_qua:"Người dự họp xác nhận nội dung hiện tại là ĐÚNG"});
+  return `Bạn là thư ký cuộc họp. Dưới đây là biên bản (JSON) và các xác nhận của người dự họp cho những điểm trước đây chưa chắc chắn.
+Hãy CẬP NHẬT biên bản:
+- Với điểm có "thong_tin_dung": thay thông tin cũ bằng thông tin đúng ở MỌI chỗ liên quan (tóm tắt, điểm chính, quyết định, đầu việc: người phụ trách / hạn, kế hoạch).
+- Với điểm được xác nhận ĐÚNG: giữ nội dung, chỉ bỏ ghi chú "[cần xác nhận]" liên quan.
+- Không thay đổi bất kỳ nội dung nào khác. Giữ nguyên cấu trúc, thứ tự và trường "xong" của từng đầu việc.
+Trả về JSON: {"bien_ban":{...cùng cấu trúc như biên bản đầu vào...},"thay_doi":["mô tả ngắn từng chỗ đã sửa, ví dụ: Hạn việc 'Soạn memo' → 25/11/2026"]}
+
+BIÊN BẢN HIỆN TẠI:
+${JSON.stringify(bb)}
+
+CÁC XÁC NHẬN:
+${JSON.stringify(xn)}`; }
+function finishApply(m, res, items){ const nb = res && res.bien_ban && typeof res.bien_ban === "object" ? res.bien_ban : null;
+  if (!nb || !nb.tom_tat) throw new Error("kết quả thiếu nội dung biên bản");
+  const oldTasks = m.minutes.viec_theo_doi || [];
+  (nb.viec_theo_doi||[]).forEach((t,i) => { if (t.xong == null && oldTasks[i]) t.xong = oldTasks[i].xong; });
+  nb.can_xac_nhan = m.minutes.can_xac_nhan; items.forEach(q => q.applied = true);
+  const changes = Array.isArray(res.thay_doi) ? res.thay_doi.filter(Boolean) : [];
+  m.minutes = nb; (m.lich_su ||= []).push({luc: new Date().toLocaleString("vi-VN"), thay_doi: changes.length ? changes : items.map(q => "Xác nhận: " + q.noi_dung)});
+  m.lastChanges = m.lich_su[m.lich_su.length-1]; }
+function finishGen(m, obj){ if (!obj || typeof obj !== "object" || !(obj.tom_tat || (obj.diem_chinh||[]).length)) throw new Error("không thấy nội dung biên bản trong phần đã dán");
+  if (obj.bien_ban && !obj.tom_tat) obj = obj.bien_ban; m.minutes = obj; delete m.lastChanges; m.lich_su = []; }
+
+/* ---------- Viết bằng Claude Pro: sao chép yêu cầu → dán kết quả ---------- */
+function copyText(t){ $("cbPrompt").value = t;
+  return navigator.clipboard.writeText(t).then(() => { $("cbPrompt").hidden = true; return true; })
+    .catch(() => { $("cbPrompt").hidden = false; $("cbPrompt").focus(); $("cbPrompt").select(); toast("Chưa tự sao chép được: giữ tay lên ô chữ → Chọn tất cả → Sao chép"); return false; }); }
+function openClaude(kind, items){ const m = S.cur; S.claude = {kind, items, id:m.id};
+  const prompt = kind === "gen" ? genPrompt(m) : applyPrompt(m, items) + CLAUDE_FMT;
+  $("cbTitle").textContent = kind === "gen" ? "Viết biên bản bằng Claude" : "Cập nhật biên bản bằng Claude";
+  $("cbText").hidden = true; $("cbImport").hidden = true; $("cbText").value = ""; $("minErr").textContent = "";
+  $("claudeBox").hidden = false; setTab("min"); copyText(prompt).then(ok => ok && toast("Đã sao chép. Mở Claude và dán vào"));
+  $("claudeBox").scrollIntoView({block:"start"}); }
+$("cbClose").onclick = () => { $("claudeBox").hidden = true; S.claude = null; };
+$("cbRecopy").onclick = () => { const c = S.claude, m = S.cur; if (!c) return; copyText(c.kind === "gen" ? genPrompt(m) : applyPrompt(m, c.items) + CLAUDE_FMT).then(ok => ok && toast("Đã sao chép lại")); };
+$("cbPaste").onclick = async () => { try{ const t = await navigator.clipboard.readText(); if (!t.trim()) throw new Error("trống"); importClaude(t); }
+  catch(e){ $("cbText").hidden = false; $("cbImport").hidden = false; $("cbText").focus(); toast("Giữ tay vào ô bên dưới → Dán → bấm Nhập kết quả"); } };
+$("cbImport").onclick = () => importClaude($("cbText").value);
+async function importClaude(t){ const c = S.claude, m = S.cur; if (!c || c.id !== m.id) return;
+  try{ const obj = parseLoose(t); if (!obj) throw new Error("không đọc được kết quả. Hãy sao chép đúng khối mã Claude trả lời");
+    if (c.kind === "gen") finishGen(m, obj); else finishApply(m, obj, c.items);
+    await saveMeeting(m); S.claude = null; $("claudeBox").hidden = true; openMeeting(m, "min");
+    toast(c.kind === "gen" ? "Đã nhập biên bản từ Claude" : "Biên bản đã được cập nhật"); }
+  catch(e){ $("minErr").textContent = "Chưa nhập được: " + e.message + "."; $("cbText").hidden = false; $("cbImport").hidden = false; } }
 $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinutes"); $("minErr").textContent="";
+  if (S.writer === "claude") return openClaude("gen");
   btn.disabled = true; btn.textContent = "Đang tạo…"; S.busy = true; setTab("min"); window.scrollTo(0,0);
   try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
   try{
@@ -763,8 +843,8 @@ $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinut
       }
       obj = await callJSON(`${INSTR}\n\n${info}\nDưới đây là ghi chú của ${parts.length} phần liên tiếp trong cùng một cuộc họp. Hãy gộp thành MỘT biên bản hoàn chỉnh: bỏ trùng lặp, nối các ý liên quan, việc nào được nhắc nhiều lần thì giữ thông tin mới nhất.\n\n${SCHEMA}\n\nGHI CHÚ CÁC PHẦN:\n${JSON.stringify(notes)}`, 6000, "Đang gộp thành biên bản…");
     }
-    m.minutes = obj; delete m.lastChanges; m.lich_su = []; await saveMeeting(m); minStatus(""); S.tab = "min"; openMeeting(m); toast("Đã tạo biên bản");
-  }catch(e){ minStatus(""); $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude” ở cuối trang."; }
+    finishGen(m, obj); await saveMeeting(m); minStatus(""); S.tab = "min"; openMeeting(m); toast("Đã tạo biên bản");
+  }catch(e){ minStatus(""); $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: vào Cài đặt, chọn Cách viết biên bản là Claude Pro."; }
   finally{ S.busy=false; try{ wake && wake.release(); }catch(e){} btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản"; } };
 function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
   if (!m.minutes){ const e = el("div","card empty"); const blob = el("div","blob"); blob.innerHTML = ICON.doc;
@@ -811,32 +891,12 @@ function confirmRow(m, q){ const r = el("div","cx" + (q.ok ? " ok" : ""));
   row.append(ok); r.append(inp, row); return r; }
 // Đưa các xác nhận của người dùng vào nội dung biên bản (sửa ở mọi chỗ liên quan)
 async function applyConfirmations(m){ const items = confirmItems(m).filter(q => q.ok && !q.applied); if (!items.length) return openMeeting(m, "min", true);
+  if (S.writer === "claude") return openClaude("apply", items);
   if (S.busy) return toast("Đang xử lý, chờ chút nhé"); S.busy = true; $("minErr").textContent = ""; setTab("min"); window.scrollTo(0,0);
   ["btnMinutes","btnExcel","btnApply"].forEach(b => $(b).disabled = true);
   try{
-    const bb = JSON.parse(JSON.stringify(m.minutes)); delete bb.can_xac_nhan;
-    const xn = items.map(q => q.sua ? {diem_can_xac_nhan:q.noi_dung, thong_tin_dung:q.sua} : {diem_can_xac_nhan:q.noi_dung, ket_qua:"Người dự họp xác nhận nội dung hiện tại là ĐÚNG"});
-    const res = await callJSON(`Bạn là thư ký cuộc họp. Dưới đây là biên bản (JSON) và các xác nhận của người dự họp cho những điểm trước đây chưa chắc chắn.
-Hãy CẬP NHẬT biên bản:
-- Với điểm có "thong_tin_dung": thay thông tin cũ bằng thông tin đúng ở MỌI chỗ liên quan (tóm tắt, điểm chính, quyết định, đầu việc: người phụ trách / hạn, kế hoạch).
-- Với điểm được xác nhận ĐÚNG: giữ nội dung, chỉ bỏ ghi chú "[cần xác nhận]" liên quan.
-- Không thay đổi bất kỳ nội dung nào khác. Giữ nguyên cấu trúc, thứ tự và trường "xong" của từng đầu việc.
-Trả về DUY NHẤT JSON hợp lệ: {"bien_ban":{...cùng cấu trúc như biên bản đầu vào...},"thay_doi":["mô tả ngắn từng chỗ đã sửa, ví dụ: Hạn việc 'Soạn memo' → 25/11/2026"]}
-
-BIÊN BẢN HIỆN TẠI:
-${JSON.stringify(bb)}
-
-CÁC XÁC NHẬN:
-${JSON.stringify(xn)}`, 6000, "Đang cập nhật biên bản theo xác nhận của bạn…");
-    const nb = res.bien_ban && typeof res.bien_ban === "object" ? res.bien_ban : null;
-    if (!nb || !nb.tom_tat) throw new Error("câu trả lời thiếu nội dung biên bản");
-    const oldTasks = m.minutes.viec_theo_doi || [];
-    (nb.viec_theo_doi||[]).forEach((t,i) => { if (t.xong == null && oldTasks[i]) t.xong = oldTasks[i].xong; });
-    nb.can_xac_nhan = m.minutes.can_xac_nhan; items.forEach(q => q.applied = true);
-    const changes = Array.isArray(res.thay_doi) ? res.thay_doi.filter(Boolean) : [];
-    m.minutes = nb; (m.lich_su ||= []).push({luc: new Date().toLocaleString("vi-VN"), thay_doi: changes.length ? changes : items.map(q => "Xác nhận: " + q.noi_dung)});
-    m.lastChanges = m.lich_su[m.lich_su.length-1];
-    await saveMeeting(m); minStatus(""); toast("Biên bản đã được cập nhật");
+    const res = await callJSON(applyPrompt(m, items) + "\nTrả về DUY NHẤT JSON hợp lệ, không markdown.", 6000, "Đang cập nhật biên bản theo xác nhận của bạn…");
+    finishApply(m, res, items); await saveMeeting(m); minStatus(""); toast("Biên bản đã được cập nhật");
   }catch(e){ minStatus(""); $("minErr").textContent = "Đã lưu xác nhận nhưng chưa cập nhật được vào biên bản: " + e.message + "\nBấm “Cập nhật biên bản” trong phần Cần xác nhận lại để thử lại."; }
   finally{ S.busy = false; ["btnMinutes","btnExcel","btnApply"].forEach(b => $(b).disabled = false); const err = $("minErr").textContent; openMeeting(m, "min"); $("minErr").textContent = err; } }
 function jumpTo(ms){ setTab("tr"); const items = [...document.querySelectorAll("#tView .utt")]; if (!items.length) return;
