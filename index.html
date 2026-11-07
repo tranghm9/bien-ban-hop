@@ -426,28 +426,50 @@ const SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (kh�
 "viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
 "ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],
 "can_xac_nhan":["các điểm cần kiểm tra lại"]}`;
+async function callLLM(content, maxTokens, label){ const btn = $("btnMinutes"); let r, raw = "", j = {};
+  for (let attempt = 1; attempt <= 6; attempt++){
+    btn.textContent = label;
+    r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
+      body: JSON.stringify({model:S.model, max_tokens:maxTokens, messages:[{role:"user", content}]})});
+    raw = await r.text(); try{ j = JSON.parse(raw); }catch(e){ j = {}; }
+    if ((r.status !== 429 && r.status < 500) || attempt === 6) break;
+    const wait = Math.max(parseInt(r.headers.get("retry-after")) || 0, 65); // giới hạn tính theo phút: đợi qua phút mới
+    for (let s = wait; s > 0; s--){ btn.textContent = `${label} Đang chờ hạn mức, còn ${s} giây…`; await new Promise(z=>setTimeout(z,1000)); }
+  }
+  if (!r.ok){ const msg = (j.error && (j.error.message || (typeof j.error === "string" ? j.error : JSON.stringify(j.error)))) || j.message || raw.slice(0,300);
+    throw new Error("Lỗi " + r.status + (msg ? " – " + msg : "")); }
+  let txt = j.choices?.[0]?.message?.content || ""; if (Array.isArray(txt)) txt = txt.map(c=>c.text||"").join("");
+  const s = txt.indexOf("{"), e = txt.lastIndexOf("}"); if (s < 0) throw new Error("Dịch vụ trả về nội dung không đúng dạng.");
+  return JSON.parse(txt.slice(s, e+1)); }
+function splitLines(lines, maxChars){ const parts=[]; let cur=[], n=0;
+  for (const l of lines){ if (n + l.length > maxChars && cur.length){ parts.push(cur.join("\n")); cur=[]; n=0; } cur.push(l); n += l.length + 1; }
+  if (cur.length) parts.push(cur.join("\n")); return parts; }
+const NOTE_SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (không giải thích, không markdown):
+{"thanh_phan":["tên người nói/được nhắc"],"diem_chinh":[{"chu_de":"","noi_dung":"","ket_luan":""}],"quyet_dinh":["..."],
+"viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
+"ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],"can_xac_nhan":["..."]}
+Ghi ngắn gọn, đủ ý, không lặp lại.`;
+const CHUNK_CHARS = 9000;
 $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinutes"); $("minErr").textContent="";
-  btn.disabled = true; btn.textContent = "Đang viết biên bản…"; S.busy = true;
+  btn.disabled = true; S.busy = true; try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
   try{
-    const user = `${INSTR}\n\nThông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.\n\n${SCHEMA}\n\nLỜI THOẠI:\n${transcriptText(m)}`;
-    let r, raw = "", j = {};
-    for (let attempt = 1; attempt <= 4; attempt++){
-      r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
-        body: JSON.stringify({model:S.model, max_tokens:8000, messages:[{role:"user", content:user}]})});
-      raw = await r.text(); try{ j = JSON.parse(raw); }catch(e){ j = {}; }
-      if (r.status !== 429 && r.status < 500) break;
-      if (attempt === 4) break;
-      const wait = Math.min(60, parseInt(r.headers.get("retry-after")) || 15*attempt);
-      for (let s = wait; s > 0; s--){ btn.textContent = `Dịch vụ đang bận, thử lại sau ${s} giây (lần ${attempt+1}/4)…`; await new Promise(z=>setTimeout(z,1000)); }
-      btn.textContent = "Đang viết biên bản…";
+    const info = `Thông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
+    const lines = m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`);
+    const parts = splitLines(lines, CHUNK_CHARS); let obj;
+    if (parts.length === 1){
+      obj = await callLLM(`${INSTR}\n\n${info}\n\n${SCHEMA}\n\nLỜI THOẠI:\n${parts[0]}`, 4000, "Đang viết biên bản…");
+    } else {
+      const notes = [];
+      for (let i = 0; i < parts.length; i++){
+        const label = `Đang đọc phần ${i+1}/${parts.length}…`;
+        const note = await callLLM(`${INSTR}\n\n${info}\nĐây là PHẦN ${i+1}/${parts.length} của lời thoại. Hãy ghi chú các nội dung của riêng phần này.\n\n${NOTE_SCHEMA}\n\nLỜI THOẠI PHẦN ${i+1}:\n${parts[i]}`, 2000, label);
+        notes.push({phan:i+1, ...note});
+      }
+      obj = await callLLM(`${INSTR}\n\n${info}\nDưới đây là ghi chú của ${parts.length} phần liên tiếp trong cùng một cuộc họp. Hãy gộp thành MỘT biên bản hoàn chỉnh: bỏ trùng lặp, nối các ý liên quan, việc nào được nhắc nhiều lần thì giữ thông tin mới nhất.\n\n${SCHEMA}\n\nGHI CHÚ CÁC PHẦN:\n${JSON.stringify(notes)}`, 4000, "Đang gộp thành biên bản…");
     }
-    if (!r.ok){ const msg = (j.error && (j.error.message || (typeof j.error === "string" ? j.error : JSON.stringify(j.error)))) || j.message || raw.slice(0,300);
-      throw new Error("Lỗi " + r.status + (msg ? " – " + msg : "")); }
-    let txt = j.choices?.[0]?.message?.content || ""; if (Array.isArray(txt)) txt = txt.map(c=>c.text||"").join("");
-    const s = txt.indexOf("{"), e = txt.lastIndexOf("}"); const obj = JSON.parse(txt.slice(s, e+1));
     m.minutes = obj; await saveMeeting(m); openMeeting(m); toast("Đã tạo biên bản");
   }catch(e){ $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude”."; }
-  finally{ S.busy=false; btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động"; } };
+  finally{ S.busy=false; try{ wake && wake.release(); }catch(e){} btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động"; } };
 function renderMinutes(m){ const v = $("minutesView"); v.innerHTML=""; $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động";
   if (!m.minutes){ v.innerHTML = `<p class="muted">Chưa có biên bản. Đặt tên người nói trước để biên bản ghi đúng tên, rồi bấm "Tạo biên bản tự động".</p>`; return; }
   const x = m.minutes, el = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
