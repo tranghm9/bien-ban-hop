@@ -5,224 +5,399 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Biên bản">
-<meta name="theme-color" content="#1d3a5f">
+<meta name="theme-color" content="#fff4f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1c1418" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Biên Bản Họp</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap">
 <script src="xlsx.full.min.js"></script>
 <style>
-/* Layout: one narrow column, a header bar, and screens that swap. Built for one hand on an iPhone. */
+/* Layout: một cột hẹp cho iPhone; thanh tiêu đề trên, nút chính nằm ở đáy màn hình trong tầm ngón cái. */
 :root{
-  --bg:#f3f5f8; --card:#ffffff; --fg:#17212e; --muted:#5d6b7c; --line:#dde3ea;
-  --accent:#1d3a5f; --accent-fg:#ffffff; --soft:#e6edf6; --rec:#c62f2f; --ok:#1f7a4d; --warn:#9a6200;
+  --bg:#fff4f7; --card:#ffffff; --fg:#3b2431; --muted:#8c6e7d; --line:#f6dce6;
+  --soft:#fde6ee; --soft2:#fff0f5; --accent:#e7799e; --btn:#d9638c; --btn-fg:#ffffff; --link:#c24f78;
+  --rec:#e14d73; --ok:#2f9a72; --ok-soft:#e3f6ee; --warn:#b97618; --warn-soft:#fdf1df;
+  --shadow:0 6px 24px rgba(214,99,140,.12); --shadow-sm:0 2px 10px rgba(214,99,140,.08);
+  --s1:#fbd3e0; --s1t:#a8345e; --s2:#e3dafb; --s2t:#5b44a8; --s3:#d4f1e4; --s3t:#2d7a58;
+  --s4:#ffe2cc; --s4t:#a5571c; --s5:#d6ebfb; --s5t:#2f6796; --s6:#fbf1c4; --s6t:#86701a;
+  --display:"Quicksand","Be Vietnam Pro",-apple-system,sans-serif;
   --font:"Be Vietnam Pro",-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root{
-  --bg:#0f141b; --card:#18202b; --fg:#e7edf4; --muted:#93a1b2; --line:#2a3544;
-  --accent:#8fb4e3; --accent-fg:#0f141b; --soft:#1f2a38; --rec:#ef6a6a; --ok:#5cc792; --warn:#e0b25a;
+  --bg:#1c1418; --card:#2a1e24; --fg:#fbecf2; --muted:#c3a5b3; --line:#3e2d36;
+  --soft:#3a2630; --soft2:#31222a; --accent:#f3a6c1; --btn:#f3a6c1; --btn-fg:#2b1520; --link:#f5b3cb;
+  --rec:#ff7f9c; --ok:#6fd3a7; --ok-soft:#1f3a2f; --warn:#f0c070; --warn-soft:#3d301c;
+  --shadow:0 6px 24px rgba(0,0,0,.35); --shadow-sm:0 2px 10px rgba(0,0,0,.25);
+  --s1:#4a2635; --s1t:#ffb8cf; --s2:#352c55; --s2t:#cbbcff; --s3:#1f4034; --s3t:#9be3c2;
+  --s4:#4a3020; --s4t:#ffc79c; --s5:#1f3449; --s5t:#a9d3f7; --s6:#433a17; --s6t:#f1df8d;
   color-scheme:dark;
 }}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
-body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);
-  padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}
+body{background:var(--bg);color:var(--fg);font:15.5px/1.55 var(--font);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
 [hidden]{display:none!important}
-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:14px 10px}
-header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.01em}
-main{max-width:640px;margin:0 auto}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-bottom:14px}
-h2{font-size:16px;margin:0;font-weight:600;text-wrap:balance}
+main{max-width:620px;margin:0 auto}
+svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 p{margin:0}
-.muted{color:var(--muted);font-size:13.5px}
-label{display:grid;gap:4px;font-size:13.5px;color:var(--muted);font-weight:500}
-input,textarea,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
-textarea{min-height:90px;resize:vertical}
-input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{font:inherit;font-weight:600;border:0;border-radius:11px;padding:12px 16px;cursor:pointer;background:var(--soft);color:var(--fg)}
-button.primary{background:var(--accent);color:var(--accent-fg)}
-button.rec{background:var(--rec);color:#fff}
-button.small{padding:7px 12px;font-size:13.5px}
-button.link{background:none;padding:6px 4px;color:var(--accent)}
-button:disabled{opacity:.5;cursor:default}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.row>*{flex:1 1 auto}
-.list{display:grid;gap:8px}
-.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);text-align:left;width:100%;color:var(--fg);font-weight:400}
-.item b{display:block;font-weight:600}
-.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--muted);white-space:nowrap;font-weight:600}
-.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)}
-.timer{font:700 40px/1 var(--mono);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rec);margin-right:6px;animation:blink 1.2s infinite}
-@keyframes blink{50%{opacity:.25}}
-@media (prefers-reduced-motion:reduce){.dot{animation:none}}
-.steps{display:grid;gap:6px;margin:0;padding:0;list-style:none}
-.steps li{display:flex;gap:8px;align-items:baseline;color:var(--muted)}
-.steps li.on{color:var(--fg);font-weight:600}
-.steps li.done{color:var(--ok)}
-.transcript{display:grid;gap:10px;max-height:55vh;overflow:auto;padding-right:4px}
-.utt{display:grid;gap:2px}
-.utt .who{font-size:12.5px;font-weight:700;color:var(--accent)}
-.utt .t{font:12px var(--mono);color:var(--muted);font-weight:400;margin-left:6px}
-.spk{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
-.spk .tag{font-weight:700;color:var(--accent);min-width:84px;font-size:13.5px}
+.muted{color:var(--muted);font-size:14px}
+
+/* Thanh tiêu đề */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding-block:8px;margin:0 -4px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.topbar .ttl{text-align:center;font:700 16px var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:transparent;color:var(--link);border:0;padding:0;cursor:pointer}
+.iconbtn:active{background:var(--soft)}
+.big-title{font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:4px}
+
+/* Thành phần chung */
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:var(--shadow-sm);display:grid;gap:12px}
+.stack{display:grid;gap:14px}
+.sec-label{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 4px -4px}
+label{display:grid;gap:6px;font-size:13.5px;color:var(--muted);font-weight:500}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--soft2);border:1.5px solid transparent;border-radius:14px;padding:12px 14px;width:100%;transition:border-color .15s}
+input::placeholder{color:var(--muted);opacity:.7}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);background:var(--card)}
+button{font:inherit;font-weight:600;border:0;border-radius:16px;padding:14px 18px;cursor:pointer;background:var(--soft);color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s, opacity .15s}
+button:active{transform:scale(.97)}
+button:focus-visible,.iconbtn:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--btn);color:var(--btn-fg);box-shadow:0 6px 16px rgba(217,99,140,.28)}
+button.ghost{background:transparent;color:var(--link);padding:10px 12px}
+button.danger{background:transparent;color:var(--rec)}
+button:disabled{opacity:.45;cursor:default;transform:none}
+.full{width:100%}
 .err{color:var(--rec);font-size:14px;white-space:pre-wrap}
-.sec h3{font-size:14px;margin:6px 0 4px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
-.sec ul{margin:0;padding-left:18px;display:grid;gap:4px}
-.tbl{overflow-x:auto}
-.tbl table{border-collapse:collapse;width:100%;font-size:13.5px}
-.tbl th,.tbl td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
-.tbl th{background:var(--soft)}
-.pin{font:700 26px var(--mono);letter-spacing:.4em;text-align:center}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;max-width:90vw;z-index:20}
+.err:empty{display:none}
+
+/* Màn khoá */
+.lock{min-height:calc(100vh - 140px);display:grid;align-content:center;justify-items:center;gap:18px;text-align:center;padding-top:20px}
+.logo{width:76px;height:76px;border-radius:24px;background:linear-gradient(145deg,var(--s1),var(--s2));display:grid;place-items:center;color:var(--s1t);box-shadow:var(--shadow)}
+.logo svg{width:36px;height:36px}
+.lock h1{font-size:24px}
+.lock .muted{max-width:300px}
+.dots{display:flex;gap:12px;height:18px;align-items:center}
+.dots i{width:13px;height:13px;border-radius:50%;border:2px solid var(--accent);transition:background .12s}
+.dots i.on{background:var(--accent)}
+.dots.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,72px);gap:14px 22px}
+.keypad button{width:72px;height:72px;border-radius:50%;font:600 26px var(--display);background:var(--card);box-shadow:var(--shadow-sm);padding:0}
+.keypad button.fn{background:transparent;box-shadow:none;font:600 14px var(--font);color:var(--link)}
+
+/* Danh sách */
+.search{position:relative}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);width:18px;height:18px}
+.search input{padding-left:40px;background:var(--card);box-shadow:var(--shadow-sm)}
+.group{display:grid;gap:10px}
+.mcard{display:grid;grid-template-columns:54px 1fr auto;gap:14px;align-items:center;background:var(--card);border-radius:20px;padding:12px 14px 12px 12px;box-shadow:var(--shadow-sm);text-align:left;width:100%;font-weight:400;color:var(--fg)}
+.datebox{width:54px;height:58px;border-radius:16px;background:var(--soft);display:grid;place-items:center;align-content:center;line-height:1.1;color:var(--link)}
+.datebox b{font:700 22px var(--display)}
+.datebox small{font-size:11px;font-weight:600;text-transform:uppercase}
+.mcard .t{font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mcard .meta{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:2px}
+.mcard .meta span{display:inline-flex;align-items:center;gap:4px}
+.mcard .meta svg{width:14px;height:14px}
+.mcard>div{min-width:0}
+.status{width:10px;height:10px;border-radius:50%;background:var(--warn)}
+.status.ok{background:var(--ok)}
+.empty{text-align:center;display:grid;justify-items:center;gap:10px;padding:40px 20px}
+.empty .blob{width:96px;height:96px;border-radius:32px;background:var(--soft);display:grid;place-items:center;color:var(--link)}
+.empty .blob svg{width:42px;height:42px}
+
+/* Thanh dưới cùng */
+.bottombar{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:linear-gradient(to top,var(--bg) 70%,transparent);display:flex;gap:10px;justify-content:center}
+.bottombar>*{flex:1 1 0;max-width:300px}
+.fab{border-radius:99px;padding:16px 26px;font-size:16px}
+
+/* Cuộc họp mới */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{flex-direction:column;gap:10px;padding:22px 12px;border-radius:22px;background:var(--card);box-shadow:var(--shadow-sm);font-weight:600}
+.tile .ic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center}
+.tile .ic svg{width:26px;height:26px}
+.tile.recb .ic{background:var(--rec);color:#fff}
+.tile.fileb .ic{background:var(--s2);color:var(--s2t)}
+.tile small{font-weight:400;color:var(--muted);font-size:12.5px}
+.recview{display:grid;justify-items:center;gap:18px;padding:18px 0 6px}
+.pulse{width:150px;height:150px;border-radius:50%;background:var(--soft);display:grid;place-items:center;position:relative}
+.pulse::before{content:"";position:absolute;inset:0;border-radius:50%;background:var(--rec);opacity:.18;animation:ring 1.8s ease-out infinite}
+.pulse .core{width:96px;height:96px;border-radius:50%;background:var(--rec);display:grid;place-items:center;color:#fff}
+.pulse .core svg{width:40px;height:40px}
+@keyframes ring{from{transform:scale(.7);opacity:.35}to{transform:scale(1.25);opacity:0}}
+.timer{font:700 42px/1 var(--mono);font-variant-numeric:tabular-nums}
+.stopbtn{width:68px;height:68px;border-radius:50%;padding:0;background:var(--card);box-shadow:var(--shadow)}
+.stopbtn i{width:24px;height:24px;border-radius:6px;background:var(--rec)}
+.filechip{display:flex;gap:12px;align-items:center;background:var(--ok-soft);border-radius:16px;padding:12px 14px}
+.filechip .ic{width:38px;height:38px;border-radius:12px;background:var(--card);display:grid;place-items:center;color:var(--ok)}
+.filechip>div{min-width:0;flex:1}
+.filechip b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.filechip a{color:var(--link);font-size:13.5px}
+.hint{display:flex;gap:10px;background:var(--soft2);border-radius:16px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
+.hint svg{color:var(--link);margin-top:2px;width:18px;height:18px}
+details.card summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.card summary::-webkit-details-marker{display:none}
+details.card summary::after{content:"＋";color:var(--link);font-size:18px}
+details[open].card summary::after{content:"－"}
+
+/* Đang xử lý */
+.work{display:grid;justify-items:center;gap:22px;text-align:center;padding-top:30px}
+.spinner{width:84px;height:84px;border-radius:50%;border:7px solid var(--soft);border-top-color:var(--accent);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:14px;text-align:left;width:100%}
+.steps li{display:flex;gap:12px;align-items:center;color:var(--muted)}
+.steps li .b{width:30px;height:30px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.steps li.on{color:var(--fg);font-weight:600}
+.steps li.on .b{background:var(--btn);color:var(--btn-fg)}
+.steps li.done{color:var(--ok)}
+.steps li.done .b{background:var(--ok-soft);color:var(--ok)}
+
+/* Chi tiết cuộc họp */
+.mhead{display:grid;gap:8px}
+.mhead h1{font-size:24px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:99px;background:var(--card);color:var(--muted);box-shadow:var(--shadow-sm)}
+.chip svg{width:14px;height:14px}
+.chip.ok{background:var(--ok-soft);color:var(--ok);box-shadow:none}
+.chip.warn{background:var(--warn-soft);color:var(--warn);box-shadow:none}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--soft);border-radius:14px;padding:4px;gap:2px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:4}
+.seg button{padding:9px 2px;border-radius:11px;background:transparent;font-size:13px;color:var(--muted);box-shadow:none;position:relative}
+.seg button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow-sm)}
+.seg .count{font-size:11px;background:var(--btn);color:var(--btn-fg);border-radius:99px;padding:0 6px;margin-left:2px}
+.progress{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:16px;padding:14px;font-size:14px;font-weight:500}
+.progress .spinner{width:22px;height:22px;border-width:3px;flex:none}
+.sum{font-size:15.5px;line-height:1.65}
+.pt{display:grid;gap:4px;padding:14px 0;border-top:1px solid var(--line)}
+.pt:first-of-type{border-top:0;padding-top:0}
+.pt b{font-weight:600}
+.pt .concl{display:inline-flex;gap:6px;align-items:flex-start;font-size:14px;color:var(--ok);background:var(--ok-soft);border-radius:10px;padding:6px 10px;justify-self:start}
+.pt .concl svg{width:16px;height:16px;margin-top:2px}
+.list-ic{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.list-ic li{display:flex;gap:10px;align-items:flex-start}
+.list-ic li svg{color:var(--link);margin-top:2px;width:18px;height:18px}
+.timeline{list-style:none;margin:0;padding:0 0 0 6px;display:grid;gap:14px;border-left:2px dashed var(--line)}
+.timeline li{position:relative;padding-left:16px}
+.timeline li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--accent)}
+.timeline small{display:block;color:var(--muted)}
+.card.warnc{background:var(--warn-soft);box-shadow:none}
+.card.warnc h2{color:var(--warn)}
+.task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);text-align:left;width:100%;font-weight:400;color:var(--fg)}
+.check{width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;margin-top:1px;color:transparent}
+.task.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
+.task.done .tt{text-decoration:line-through;color:var(--muted)}
+.check svg{width:15px;height:15px;stroke-width:3}
+.task .tt{font-weight:600;display:block}
+.task .chips{margin-top:8px}
+.task .chip{box-shadow:none;background:var(--soft2)}
+.chip.hi{background:#fde0e6;color:#b4314f} .chip.mid{background:var(--warn-soft);color:var(--warn)} .chip.lo{background:var(--ok-soft);color:var(--ok)}
+@media (prefers-color-scheme:dark){.chip.hi{background:#4a2330;color:#ff9fb5}}
+.utt{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 14px var(--display)}
+.bubble{background:var(--card);border-radius:4px 18px 18px 18px;padding:10px 14px;box-shadow:var(--shadow-sm);min-width:0}
+.bubble .h{font-size:13px;font-weight:700;display:flex;gap:8px;align-items:baseline}
+.bubble .h span{font:12px var(--mono);color:var(--muted);font-weight:400}
+.spkcard{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm)}
+.spkcard .av{width:44px;height:44px;font-size:17px}
+.spkcard>div{display:grid;gap:8px;min-width:0}
+.spkcard .q{font-size:13.5px;color:var(--muted);font-style:italic}
+.spkcard .n{font-size:12.5px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:14px;font-size:14px;font-weight:500;max-width:90vw;z-index:20;box-shadow:var(--shadow);animation:pop .2s ease-out}
+@keyframes pop{from{opacity:0;transform:translate(-50%,8px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <main>
-<header>
-  <h1>Biên Bản Họp</h1>
-  <div class="row" style="flex:0 0 auto">
-    <button class="link small" id="btnHome" hidden>Danh sách</button>
-    <button class="link small" id="btnSettings" hidden>Cài đặt</button>
-    <button class="link small" id="btnLock" hidden>Khoá</button>
-  </div>
-</header>
+<div class="topbar" id="topbar" hidden>
+  <button class="iconbtn" id="btnBack" aria-label="Quay lại"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <div class="ttl" id="topTitle"></div>
+  <button class="iconbtn" id="btnSettings" aria-label="Cài đặt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div>
 
 <!-- Khoá / tạo mã PIN -->
 <section id="scrLock" hidden>
-  <div class="card">
-    <h2 id="lockTitle">Mở khoá</h2>
-    <p class="muted" id="lockHint">Nhập mã PIN để mở dữ liệu biên bản.</p>
-    <input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="••••••">
-    <input id="pin2" class="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="nhập lại" hidden>
-    <button class="primary" id="btnUnlock">Mở khoá</button>
+  <div class="lock">
+    <div class="logo"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+    <h1 id="lockTitle">Mở khoá</h1>
+    <p class="muted" id="lockHint">Nhập mã PIN để mở biên bản của bạn.</p>
+    <div class="dots" id="dots"></div>
+    <input id="pin" type="password" hidden>
+    <input id="pin2" type="password" hidden>
+    <div class="keypad" id="keypad"></div>
+    <button class="primary" id="btnUnlock" style="min-width:220px">Mở khoá</button>
     <p class="err" id="lockErr"></p>
   </div>
 </section>
 
 <!-- Cài đặt -->
 <section id="scrSettings" hidden>
-  <div class="card">
-    <h2>Khoá dịch vụ AssemblyAI</h2>
-    <p class="muted">Dán khoá API (API key) lấy từ trang AssemblyAI. Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
-    <input id="apiKey" type="password" autocomplete="off" placeholder="Dán khoá API vào đây">
-    <label>Mô hình viết biên bản
-      <select id="llmModel">
-        <option value="claude-sonnet-4-6">Claude Sonnet (khuyên dùng)</option>
-        <option value="claude-haiku-4-5-20251001">Claude Haiku (rẻ hơn)</option>
-      </select>
-    </label>
-    <button class="primary" id="btnSaveKey">Lưu</button>
-    <p class="muted" id="keyStatus"></p>
-  </div>
-  <div class="card">
-    <h2>Đổi mã PIN / xoá dữ liệu</h2>
-    <p class="muted">Quên mã PIN thì không mở lại được dữ liệu cũ. Xoá toàn bộ sẽ xoá khoá API và mọi biên bản trên máy này.</p>
-    <button id="btnWipe">Xoá toàn bộ dữ liệu</button>
-    <p class="err" id="wipeConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
+  <div class="stack">
+    <p class="sec-label">Kết nối dịch vụ</p>
+    <div class="card">
+      <label>Khoá API AssemblyAI
+        <input id="apiKey" type="password" autocomplete="off" placeholder="Dán khoá API vào đây">
+      </label>
+      <p class="muted">Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
+      <label>Mô hình viết biên bản
+        <select id="llmModel">
+          <option value="claude-sonnet-4-6">Claude Sonnet (khuyên dùng)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku (rẻ hơn)</option>
+        </select>
+      </label>
+      <button class="primary" id="btnSaveKey">Lưu</button>
+      <p class="muted" id="keyStatus"></p>
+    </div>
+    <p class="sec-label">Bảo mật</p>
+    <div class="card">
+      <button id="btnLock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Khoá app ngay</button>
+      <p class="muted">App tự khoá sau 10 phút không dùng. Quên mã PIN thì không mở lại được dữ liệu cũ.</p>
+      <button class="danger" id="btnWipe">Xoá toàn bộ dữ liệu trên máy</button>
+      <p class="err" id="wipeConfirm" hidden>Bấm lần nữa để xác nhận. Mọi biên bản và khoá API sẽ bị xoá.</p>
+    </div>
   </div>
 </section>
 
 <!-- Danh sách cuộc họp -->
 <section id="scrHome" hidden>
-  <button class="primary" id="btnNew" style="width:100%;margin-bottom:14px">+ Cuộc họp mới</button>
-  <div class="list" id="meetList"></div>
-  <p class="muted" id="emptyList" style="text-align:center;padding:30px 0">Chưa có biên bản nào. Bấm "Cuộc họp mới" để bắt đầu.</p>
+  <div class="stack">
+    <div>
+      <h1 class="big-title">Biên bản họp</h1>
+      <p class="muted" id="homeSub"></p>
+    </div>
+    <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Tìm theo chủ đề, người tham dự…"></div>
+    <div id="meetList" class="stack"></div>
+    <div class="empty" id="emptyList">
+      <div class="blob"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+      <h2>Chưa có cuộc họp nào</h2>
+      <p class="muted">Bấm <b>Cuộc họp mới</b> ở dưới để ghi âm hoặc chọn file ghi âm từ app Ghi âm.</p>
+    </div>
+  </div>
 </section>
 
 <!-- Cuộc họp mới -->
 <section id="scrNew" hidden>
-  <div class="card">
-    <h2>Thông tin cuộc họp</h2>
-    <label>Chủ đề<input id="mTitle" placeholder="Ví dụ: Họp tiến độ dự án X"></label>
-    <label>Ngày họp<input id="mDate" type="date"></label>
-    <label>Người tham dự (không bắt buộc)<input id="mPeople" placeholder="Ví dụ: anh Minh, chị Lan, Trang"></label>
-    <label>Số người nói (ước lượng, không bắt buộc)<input id="mSpeakers" type="number" min="1" max="20" inputmode="numeric" placeholder="Để trống nếu không rõ"></label>
-  </div>
-  <div class="card">
-    <h2>Ghi âm</h2>
-    <div class="row">
-      <button class="rec" id="btnRec">● Ghi âm ngay</button>
-      <button id="btnPick">Chọn file ghi âm</button>
+  <div class="stack">
+    <div id="pickBox" class="stack">
+      <div class="tiles">
+        <button class="tile recb" id="btnRec"><span class="ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Ghi âm ngay<small>Ghi trực tiếp trong app</small></button>
+        <button class="tile fileb" id="btnPick"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg></span>Chọn file<small>Từ app Ghi âm / Tệp</small></button>
+      </div>
+      <div class="hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span>Họp dài 1–2 tiếng: nên ghi bằng app <b>Ghi âm</b> của iPhone, sau đó bấm <b>Chia sẻ → Lưu vào Tệp</b> rồi chọn file ở đây.</span></div>
     </div>
     <input type="file" id="fileIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.mp4" hidden>
-    <div id="recBox" hidden class="card" style="margin:0">
+    <div id="recBox" class="card recview" hidden>
+      <div class="pulse"><div class="core"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div></div>
       <div class="timer" id="recTime">00:00:00</div>
-      <p class="muted" style="text-align:center"><span class="dot"></span>Đang ghi. Giữ màn hình mở, không chuyển sang app khác.</p>
-      <button class="primary" id="btnStop">■ Dừng ghi</button>
+      <p class="muted">Đang ghi âm. Giữ màn hình mở, không chuyển app.</p>
+      <button class="stopbtn" id="btnStop" aria-label="Dừng ghi"><i></i></button>
     </div>
-    <p class="muted" id="fileInfo"></p>
-    <p class="muted">Mẹo: với cuộc họp dài, an toàn nhất là ghi bằng app Ghi âm (Voice Memos), sau đó bấm <b>Chia sẻ → Lưu vào Tệp</b>, rồi bấm "Chọn file ghi âm" ở đây.</p>
+    <div id="fileInfo"></div>
+    <details class="card" id="metaBox" open>
+      <summary>Thông tin cuộc họp</summary>
+      <label>Chủ đề<input id="mTitle" placeholder="Ví dụ: Họp tiến độ dự án X"></label>
+      <label>Ngày họp<input id="mDate" type="date"></label>
+      <label>Người tham dự<input id="mPeople" placeholder="Ví dụ: anh Minh, chị Lan, Trang"></label>
+      <label>Số người nói (ước lượng)<input id="mSpeakers" type="number" min="1" max="20" inputmode="numeric" placeholder="Để trống nếu không rõ"></label>
+      <p class="muted">Ghi tên người tham dự giúp máy nghe đúng tên riêng hơn.</p>
+    </details>
+    <p class="err" id="newErr"></p>
   </div>
-  <button class="primary" id="btnProcess" style="width:100%" disabled>Chuyển thành chữ &amp; nhận diện người nói</button>
-  <p class="err" id="newErr"></p>
 </section>
 
 <!-- Đang xử lý -->
 <section id="scrWork" hidden>
-  <div class="card">
-    <h2>Đang xử lý</h2>
-    <ul class="steps" id="steps">
-      <li data-s="up">Tải file ghi âm lên</li>
-      <li data-s="tr">Chuyển giọng nói thành chữ, phân biệt người nói</li>
-      <li data-s="save">Lưu kết quả trên máy</li>
-    </ul>
-    <p class="muted" id="workNote">Cuộc họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.</p>
+  <div class="work">
+    <div class="spinner" id="workSpin"></div>
+    <div><h1 style="font-size:22px">Đang chuyển thành chữ</h1><p class="muted" id="workNote">Họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.</p></div>
+    <div class="card" style="width:100%">
+      <ul class="steps" id="steps">
+        <li data-s="up"><span class="b">1</span>Tải file ghi âm lên</li>
+        <li data-s="tr"><span class="b">2</span>Chuyển giọng nói thành chữ, phân biệt người nói</li>
+        <li data-s="save"><span class="b">3</span>Lưu kết quả trên máy</li>
+      </ul>
+    </div>
     <p class="err" id="workErr"></p>
     <button id="btnWorkBack" hidden>Quay lại</button>
   </div>
 </section>
 
-<!-- Kết quả -->
+<!-- Chi tiết cuộc họp -->
 <section id="scrMeet" hidden>
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h2 id="vTitle" style="flex:1 1 60%"></h2>
-      <span class="pill" id="vState"></span>
+  <div class="stack">
+    <div class="mhead">
+      <h1 id="vTitle"></h1>
+      <div class="chips" id="vChips"></div>
     </div>
-    <p class="muted" id="vMeta"></p>
-  </div>
-  <div class="card">
-    <h2>Đặt tên người nói</h2>
-    <p class="muted">Máy phân biệt người nói theo đặc điểm giọng và đặt tên tạm là A, B, C. Đọc vài câu đầu của mỗi người rồi gõ tên thật vào.</p>
-    <div class="spk" id="spkBox"></div>
-    <button class="small" id="btnSaveNames">Lưu tên</button>
-  </div>
-  <div class="card">
-    <h2>Biên bản</h2>
-    <div id="minutesView"></div>
-    <div class="row">
-      <button class="primary" id="btnMinutes">Tạo biên bản tự động</button>
-      <button id="btnExcel">Tải file Excel</button>
+    <div class="seg" role="tablist">
+      <button data-tab="min" class="on">Biên bản</button>
+      <button data-tab="task">Đầu việc</button>
+      <button data-tab="tr">Lời thoại</button>
+      <button data-tab="spk">Người nói</button>
     </div>
-    <button class="small" id="btnCopy">Sao chép lời thoại để dán vào Claude</button>
+    <div class="progress" id="minProg" hidden><div class="spinner"></div><span id="minProgText"></span></div>
     <p class="err" id="minErr"></p>
+    <div id="tab_min" class="stack"></div>
+    <div id="tab_task" class="stack" hidden></div>
+    <div id="tab_tr" class="stack" hidden><div id="tView" class="stack"></div></div>
+    <div id="tab_spk" class="stack" hidden>
+      <p class="muted">Máy phân biệt người nói qua đặc điểm giọng và đặt tên tạm A, B, C. Đọc câu nói mẫu rồi gõ tên thật.</p>
+      <div id="spkBox" class="stack"></div>
+      <datalist id="peopleList"></datalist>
+      <button class="primary" id="btnSaveNames">Lưu tên người nói</button>
+    </div>
+    <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Sao chép lời thoại để dán vào Claude</button>
+    <button class="danger" id="btnDel">Xoá cuộc họp này</button>
+    <p class="err" id="delConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
   </div>
-  <div class="card">
-    <h2>Lời thoại</h2>
-    <div class="transcript" id="tView"></div>
-  </div>
-  <button id="btnDel" style="width:100%">Xoá cuộc họp này</button>
-  <p class="err" id="delConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
 </section>
 </main>
-<div id="toast" hidden></div>
+
+<!-- Thanh nút dưới cùng (đổi theo từng màn) -->
+<div class="bottombar" id="barHome" hidden><button class="primary fab" id="btnNew"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Cuộc họp mới</button></div>
+<div class="bottombar" id="barNew" hidden><button class="primary" id="btnProcess" disabled>Chuyển thành chữ</button></div>
+<div class="bottombar" id="barMeet" hidden>
+  <button id="btnExcel"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Tải Excel</button>
+  <button class="primary" id="btnMinutes">Tạo biên bản</button>
+</div>
+<div class="toast" id="toast" hidden></div>
 
 <script>
 "use strict";
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const $ = id => document.getElementById(id);
+const ICON = {
+  check:'<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',
+  user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  cal:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  people:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>',
+  flag:'<svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+  file:'<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>'
+};
 const screens = ["scrLock","scrSettings","scrHome","scrNew","scrWork","scrMeet"];
-function show(id){ screens.forEach(s => $(s).hidden = s !== id);
-  const unlocked = !!S.key; ["btnHome","btnSettings","btnLock"].forEach(b => $(b).hidden = !unlocked);
-  $("btnHome").hidden = !unlocked || id === "scrHome"; window.scrollTo(0,0); }
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true,2600); }
-const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", audio:null, audioName:"", cur:null };
+const TITLES = {scrSettings:"Cài đặt", scrNew:"Cuộc họp mới", scrWork:"", scrMeet:"", scrHome:"", scrLock:""};
+function show(id){ screens.forEach(s => $(s).hidden = s !== id); S.screen = id;
+  $("topbar").hidden = id === "scrLock" || id === "scrWork";
+  $("btnBack").style.visibility = id === "scrHome" ? "hidden" : "visible";
+  $("btnSettings").style.visibility = id === "scrHome" ? "visible" : "hidden";
+  $("topTitle").textContent = TITLES[id] || "";
+  $("barHome").hidden = id !== "scrHome"; $("barNew").hidden = id !== "scrNew"; $("barMeet").hidden = id !== "scrMeet";
+  window.scrollTo(0,0); }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; t.style.animation="none"; t.offsetHeight; t.style.animation="";
+  clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true,2600); }
+const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", audio:null, audioName:"", cur:null, tab:"min", all:[] };
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+const withIcon = (tag, cls, icon, txt) => { const e = el(tag, cls); e.innerHTML = ICON[icon] || ""; e.append(document.createTextNode(txt)); return e; };
 
 /* ---------- Lưu trữ mã hoá (IndexedDB + AES-GCM, khoá suy ra từ mã PIN) ---------- */
 const te = new TextEncoder(), td = new TextDecoder();
@@ -247,43 +422,63 @@ async function tx(mode, fn){ const d = await db(); return new Promise((res,rej)=
   const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); }
 async function saveMeeting(m){ const box = await enc(m); await tx("readwrite", st => st.put({id:m.id, ...box})); }
 async function loadMeetings(){ const rows = await tx("readonly", st => st.getAll()); const out=[];
-  for (const r of rows||[]) { try{ out.push(await dec(r)); }catch(e){} } return out.sort((a,b)=>b.created-a.created); }
+  for (const r of rows||[]) { try{ out.push(await dec(r)); }catch(e){} } return out.sort((a,b)=>(b.date||"").localeCompare(a.date||"") || b.created-a.created); }
 async function delMeeting(id){ await tx("readwrite", st => st.delete(id)); }
 
-/* ---------- Mở khoá ---------- */
+/* ---------- Mở khoá với bàn phím số ---------- */
 const hasPin = () => !!lsGet("bb_salt");
-function initLock(){
-  const first = !hasPin();
-  $("lockTitle").textContent = first ? "Tạo mã PIN" : "Mở khoá";
-  $("lockHint").textContent = first ? "Đặt mã PIN (ít nhất 6 số). Mã này dùng để mã hoá khoá API và mọi biên bản trên máy. Hãy nhớ kỹ: quên mã là mất dữ liệu." : "Nhập mã PIN để mở dữ liệu biên bản.";
-  $("pin2").hidden = !first; $("btnUnlock").textContent = first ? "Tạo mã PIN" : "Mở khoá";
-  $("pin").value=""; $("pin2").value=""; $("lockErr").textContent=""; show("scrLock"); setTimeout(()=>$("pin").focus(),100);
-}
+let pinStage = 1; // 1: nhập mã, 2: nhập lại (khi tạo mới)
+function curPin(){ return pinStage === 2 ? $("pin2") : $("pin"); }
+function drawDots(){ const n = curPin().value.length, d = $("dots"); d.innerHTML = "";
+  for (let i = 0; i < Math.max(6, n); i++){ const x = el("i", i < n ? "on" : ""); d.appendChild(x); } }
+(function buildPad(){ const k = $("keypad");
+  ["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach(v => { const b = el("button", v==="⌫" ? "fn" : "", v);
+    if (!v){ b.style.visibility = "hidden"; } else if (v === "⌫") b.setAttribute("aria-label","Xoá một số");
+    b.onclick = () => { const p = curPin(); if (v === "⌫") p.value = p.value.slice(0,-1); else if (p.value.length < 12) p.value += v;
+      $("lockErr").textContent = ""; drawDots(); };
+    k.appendChild(b); }); })();
+document.addEventListener("keydown", e => { if ($("scrLock").hidden) return;
+  if (/^\d$/.test(e.key)) { const p = curPin(); if (p.value.length < 12){ p.value += e.key; drawDots(); } }
+  else if (e.key === "Backspace"){ const p = curPin(); p.value = p.value.slice(0,-1); drawDots(); }
+  else if (e.key === "Enter") $("btnUnlock").click(); });
+function lockText(){ const first = !hasPin();
+  $("lockTitle").textContent = first ? (pinStage === 1 ? "Tạo mã PIN" : "Nhập lại mã PIN") : "Mở khoá";
+  $("lockHint").textContent = first ? (pinStage === 1 ? "Ít nhất 6 số. Mã này mã hoá mọi biên bản trên máy, quên mã là mất dữ liệu." : "Nhập lại để xác nhận.") : "Nhập mã PIN để mở biên bản của bạn.";
+  $("btnUnlock").textContent = first ? (pinStage === 1 ? "Tiếp tục" : "Tạo mã PIN") : "Mở khoá"; }
+function shake(msg){ $("lockErr").textContent = msg; const d = $("dots"); d.classList.remove("shake"); d.offsetWidth; d.classList.add("shake"); }
+function initLock(){ pinStage = 1; $("pin").value=""; $("pin2").value=""; $("lockErr").textContent=""; lockText(); drawDots(); show("scrLock"); }
 $("btnUnlock").onclick = async () => {
   const pin = $("pin").value.trim(); $("lockErr").textContent = "";
+  if (S.unlocking) return; S.unlocking = true;
   try{
     if (!hasPin()){
-      if (pin.length < 6) return $("lockErr").textContent = "Mã PIN cần ít nhất 6 số.";
-      if (pin !== $("pin2").value.trim()) return $("lockErr").textContent = "Hai lần nhập không giống nhau.";
+      if (pinStage === 1){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); pinStage = 2; lockText(); drawDots(); return; }
+      if (pin !== $("pin2").value.trim()){ pinStage = 1; $("pin").value=""; $("pin2").value=""; lockText(); drawDots(); return shake("Hai lần nhập không giống nhau, hãy đặt lại."); }
       const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt);
       lsSet("bb_salt", b64(salt)); lsSet("bb_check", JSON.stringify(await enc("ok")));
     } else {
+      $("btnUnlock").textContent = "Đang mở…";
       const k = await deriveKey(pin, unb64(lsGet("bb_salt")));
-      S.key = k; try{ await dec(JSON.parse(lsGet("bb_check"))); }catch(e){ S.key=null; return $("lockErr").textContent = "Sai mã PIN."; }
+      S.key = k; try{ await dec(JSON.parse(lsGet("bb_check"))); }catch(e){ S.key=null; $("pin").value=""; drawDots(); lockText(); return shake("Sai mã PIN, thử lại."); }
     }
     const cfg = lsGet("bb_cfg"); if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey=c.apiKey||""; S.model=c.model||S.model; }catch(e){} }
     if (!S.apiKey) openSettings(); else openHome();
   }catch(e){ $("lockErr").textContent = "Lỗi: " + e.message; }
+  finally{ S.unlocking = false; }
 };
-$("pin").addEventListener("keydown", e => { if (e.key==="Enter" && $("pin2").hidden) $("btnUnlock").click(); });
-$("btnLock").onclick = () => { S.key=null; S.apiKey=""; S.cur=null; initLock(); };
+$("btnLock").onclick = () => { S.key=null; S.apiKey=""; S.cur=null; S.all=[]; initLock(); };
 document.addEventListener("visibilitychange", () => { if (document.hidden) S.hiddenAt = Date.now();
   else if (S.key && !S.busy && !S.rec && S.hiddenAt && Date.now()-S.hiddenAt > 10*60*1000) $("btnLock").click(); });
 
+/* ---------- Điều hướng ---------- */
+$("btnBack").onclick = () => { if (S.rec) return toast("Hãy dừng ghi âm trước");
+  if (S.screen === "scrSettings" && !S.apiKey) return toast("Cần lưu khoá API trước");
+  openHome(); };
+$("btnSettings").onclick = openSettings;
+
 /* ---------- Cài đặt ---------- */
 function openSettings(){ $("apiKey").value = S.apiKey; $("llmModel").value = S.model;
-  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API."; $("wipeConfirm").hidden = true; show("scrSettings"); }
-$("btnSettings").onclick = openSettings;
+  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true; show("scrSettings"); }
 $("btnSaveKey").onclick = async () => {
   const k = $("apiKey").value.trim(); if (!k) return $("keyStatus").textContent = "Chưa dán khoá.";
   $("keyStatus").textContent = "Đang kiểm tra khoá…";
@@ -291,7 +486,7 @@ $("btnSaveKey").onclick = async () => {
     if (r.status===401) return $("keyStatus").textContent = "Khoá không đúng. Hãy sao chép lại từ trang AssemblyAI.";
   }catch(e){ return $("keyStatus").textContent = "Không kết nối được mạng: " + e.message; }
   S.apiKey = k; S.model = $("llmModel").value; lsSet("bb_cfg", JSON.stringify(await enc({apiKey:k, model:S.model})));
-  toast("Đã lưu khoá API"); openHome();
+  toast("Đã lưu cài đặt"); openHome();
 };
 $("btnWipe").onclick = async () => {
   if ($("wipeConfirm").hidden){ $("wipeConfirm").hidden=false; return; }
@@ -300,26 +495,45 @@ $("btnWipe").onclick = async () => {
 };
 
 /* ---------- Danh sách ---------- */
-async function openHome(){ show("scrHome"); const list = $("meetList"); list.innerHTML="";
-  const ms = await loadMeetings(); $("emptyList").hidden = ms.length>0;
-  for (const m of ms){ const b = document.createElement("button"); b.className="item";
-    const st = m.minutes ? ["ok","Có biên bản"] : ["warn","Chưa có biên bản"];
-    b.innerHTML = `<span><b></b><span class="muted"></span></span><span class="pill ${st[0]}">${st[1]}</span>`;
-    b.querySelector("b").textContent = m.title || "(Không tên)";
-    b.querySelector(".muted").textContent = fmtDate(m.date) + " · " + (m.durationText||"");
-    b.onclick = () => openMeeting(m); list.appendChild(b); } }
-$("btnHome").onclick = () => { if (!S.rec) openHome(); };
 const fmtDate = d => d ? d.split("-").reverse().join("/") : "";
 const hms = s => [Math.floor(s/3600), Math.floor(s%3600/60), Math.floor(s%60)].map(n=>String(n).padStart(2,"0")).join(":");
+const shortDur = t => { if (!t) return ""; const [h,m] = t.split(":").map(Number); return (h ? h + " giờ " : "") + (m ? m + " phút" : (h ? "" : "dưới 1 phút")); };
+const WD = ["CN","T2","T3","T4","T5","T6","T7"];
+async function openHome(){ show("scrHome"); S.all = await loadMeetings(); $("q").value = ""; renderList(); }
+function renderList(){ const list = $("meetList"); list.innerHTML = ""; const q = $("q").value.trim().toLowerCase();
+  const ms = S.all.filter(m => !q || [m.title, m.people, ...Object.values(m.names||{})].join(" ").toLowerCase().includes(q));
+  const todo = S.all.reduce((n,m) => n + ((m.minutes?.viec_theo_doi)||[]).filter(t=>!t.xong).length, 0);
+  $("homeSub").textContent = S.all.length ? `${S.all.length} cuộc họp · ${todo} việc chưa xong` : "";
+  $("emptyList").hidden = S.all.length > 0;
+  if (S.all.length && !ms.length) list.appendChild(el("p","muted","Không tìm thấy cuộc họp phù hợp."));
+  let curMonth = "", group;
+  for (const m of ms){ const [y,mo,d] = (m.date||"").split("-");
+    const key = mo ? `Tháng ${+mo}/${y}` : "Không rõ ngày";
+    if (key !== curMonth){ curMonth = key; list.appendChild(el("p","sec-label",key)); group = el("div","group"); list.appendChild(group); }
+    const b = el("button","mcard");
+    const db_ = el("div","datebox"); db_.append(el("b","",d ? +d : "–"), el("small","", m.date ? WD[new Date(m.date+"T00:00").getDay()] : ""));
+    const mid = el("div"); mid.append(el("span","t", m.title || "(Không tên)"));
+    const meta = el("div","meta");
+    if (m.durationText) meta.append(withIcon("span","", "clock", shortDur(m.durationText)));
+    meta.append(withIcon("span","", "people", Object.keys(m.names||{}).length + " người"));
+    const open = ((m.minutes?.viec_theo_doi)||[]).filter(t=>!t.xong).length; if (open) meta.append(withIcon("span","", "flag", open + " việc"));
+    mid.append(meta);
+    const st = el("span","status" + (m.minutes ? " ok" : "")); st.title = m.minutes ? "Đã có biên bản" : "Chưa có biên bản";
+    b.append(db_, mid, st); b.onclick = () => openMeeting(m); group.appendChild(b); } }
+$("q").addEventListener("input", renderList);
 
 /* ---------- Cuộc họp mới: ghi âm / chọn file ---------- */
-$("btnNew").onclick = () => { S.audio=null; $("fileInfo").textContent=""; $("newErr").textContent="";
+$("btnNew").onclick = () => { S.audio=null; $("fileInfo").innerHTML=""; $("newErr").textContent="";
   $("mTitle").value=""; $("mPeople").value=""; $("mSpeakers").value=""; $("mDate").value = new Date().toLocaleDateString("sv");
-  $("btnProcess").disabled = true; $("recBox").hidden = true; show("scrNew"); };
+  $("btnProcess").disabled = true; $("recBox").hidden = true; $("pickBox").hidden = false; show("scrNew"); };
 $("btnPick").onclick = () => $("fileIn").click();
-$("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (!f) return; setAudio(f, f.name); };
-function setAudio(blob, name){ S.audio = blob; S.audioName = name;
-  $("fileInfo").textContent = `Đã có file: ${name} (${(blob.size/1048576).toFixed(1)} MB)`; $("btnProcess").disabled = false; }
+$("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (!f) return; setAudio(f, f.name); $("fileIn").value = ""; };
+function setAudio(blob, name){ S.audio = blob; S.audioName = name; const box = $("fileInfo"); box.innerHTML = "";
+  const chip = el("div","filechip"); const ic = el("div","ic"); ic.innerHTML = ICON.file;
+  const info = el("div"); info.append(el("b","",name), el("span","muted", `${(blob.size/1048576).toFixed(1)} MB · sẵn sàng`));
+  const again = el("button","ghost","Đổi"); again.onclick = () => { S.audio = null; box.innerHTML = ""; $("pickBox").hidden = false; $("btnProcess").disabled = true; };
+  chip.append(ic, info, again); box.appendChild(chip);
+  $("pickBox").hidden = true; $("btnProcess").disabled = false; }
 let mr, chunks=[], t0, tick, wake;
 $("btnRec").onclick = async () => {
   $("newErr").textContent = "";
@@ -331,22 +545,22 @@ $("btnRec").onclick = async () => {
     mr.onstop = () => { stream.getTracks().forEach(t=>t.stop()); clearInterval(tick); S.rec=false; try{ wake && wake.release(); }catch(e){}
       const ext = (mr.mimeType||"").includes("mp4") ? "m4a" : "webm";
       const blob = new Blob(chunks, {type: mr.mimeType || "audio/mp4"});
+      $("recBox").hidden = true; $("barNew").hidden = false;
       setAudio(blob, `ghi-am-${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${ext}`);
-      $("recBox").hidden = true; $("btnRec").disabled=false; $("btnPick").disabled=false;
       offerSave(blob); };
-    mr.start(10000); S.rec=true; t0 = Date.now(); $("recBox").hidden=false; $("btnRec").disabled=true; $("btnPick").disabled=true;
-    tick = setInterval(()=> $("recTime").textContent = hms((Date.now()-t0)/1000), 500);
+    mr.start(10000); S.rec=true; t0 = Date.now(); $("recBox").hidden=false; $("pickBox").hidden=true; $("barNew").hidden = true;
+    $("recTime").textContent = "00:00:00"; tick = setInterval(()=> $("recTime").textContent = hms((Date.now()-t0)/1000), 500);
     try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
   }catch(e){ $("newErr").textContent = "Không mở được micro. Vào Cài đặt iPhone → Safari → Micro, chọn Cho phép.\n(" + e.message + ")"; }
 };
 $("btnStop").onclick = () => mr && mr.state !== "inactive" && mr.stop();
 function offerSave(blob){ // cho phép lưu file ghi âm về máy để phòng trường hợp xử lý lỗi
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = S.audioName;
-  a.textContent = "Lưu file ghi âm về máy (dự phòng)"; a.style.display="block"; a.style.marginTop="6px";
-  $("fileInfo").appendChild(a); }
+  a.textContent = "Lưu file ghi âm về máy (dự phòng)"; const info = $("fileInfo").querySelector(".filechip>div"); if (info) info.append(document.createElement("br"), a); }
 
 /* ---------- Gửi AssemblyAI ---------- */
-function step(s, state){ document.querySelectorAll("#steps li").forEach(li => { if (li.dataset.s===s){ li.className = state; } }); }
+function step(s, state){ document.querySelectorAll("#steps li").forEach(li => { if (li.dataset.s===s){ li.className = state;
+  const b = li.querySelector(".b"); if (state === "done") b.innerHTML = ICON.check; } }); }
 async function aai(path, opts={}){ const r = await fetch(AAI+path, {...opts, headers:{authorization:S.apiKey, ...(opts.headers||{})}});
   const txt = await r.text(); let j; try{ j = JSON.parse(txt); }catch(e){ j = {error:txt}; }
   if (!r.ok) throw new Error((j && j.error) || ("Lỗi " + r.status)); return j; }
@@ -354,8 +568,8 @@ $("btnProcess").onclick = async () => {
   if (!S.audio) return;
   const meta = { title:$("mTitle").value.trim() || "Cuộc họp " + fmtDate($("mDate").value), date:$("mDate").value,
     people:$("mPeople").value.trim(), speakers: parseInt($("mSpeakers").value) || null };
-  S.busy = true; show("scrWork"); $("workErr").textContent=""; $("btnWorkBack").hidden = true;
-  document.querySelectorAll("#steps li").forEach(li=>li.className="");
+  S.busy = true; show("scrWork"); $("workErr").textContent=""; $("btnWorkBack").hidden = true; $("workSpin").hidden = false;
+  document.querySelectorAll("#steps li").forEach((li,i)=>{ li.className=""; li.querySelector(".b").textContent = i+1; });
   try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
   try{
     step("up","on");
@@ -371,7 +585,7 @@ $("btnProcess").onclick = async () => {
     while (true){
       await new Promise(r=>setTimeout(r,5000));
       job = await aai("/v2/transcript/" + job.id);
-      $("workNote").textContent = `Đang xử lý… ${hms((Date.now()-started)/1000)} (trạng thái: ${job.status})`;
+      $("workNote").textContent = `Đã chạy ${hms((Date.now()-started)/1000)}. Giữ màn hình mở nhé.`;
       if (job.status === "completed") break;
       if (job.status === "error") throw new Error(job.error || "Dịch vụ báo lỗi khi chuyển giọng nói.");
     }
@@ -384,35 +598,47 @@ $("btnProcess").onclick = async () => {
     await saveMeeting(m); step("save","done");
     aai("/v2/transcript/" + job.id, {method:"DELETE"}).catch(()=>{}); // xoá bản chép lời trên máy chủ AssemblyAI
     S.busy=false; try{ wake && wake.release(); }catch(e){}
-    openMeeting(m); toast("Đã chuyển xong. Hãy đặt tên người nói.");
-  }catch(e){ S.busy=false; $("workErr").textContent = "Có lỗi: " + e.message + "\nFile ghi âm vẫn còn trên máy, bạn có thể thử lại."; $("btnWorkBack").hidden=false; }
+    S.tab = "spk"; openMeeting(m); toast("Xong! Hãy đặt tên người nói");
+  }catch(e){ S.busy=false; $("workSpin").hidden = true; $("workErr").textContent = "Có lỗi: " + e.message + "\nFile ghi âm vẫn còn trên máy, bạn có thể thử lại."; $("btnWorkBack").hidden=false; }
 };
 $("btnWorkBack").onclick = () => show("scrNew");
 
-/* ---------- Xem cuộc họp ---------- */
+/* ---------- Chi tiết cuộc họp ---------- */
 const who = (m, s) => m.names[s] || ("Người " + s);
-function openMeeting(m){ S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent="";
-  $("vTitle").textContent = m.title; $("vMeta").textContent = [fmtDate(m.date), m.durationText, Object.keys(m.names).length + " người nói"].filter(Boolean).join(" · ");
-  $("vState").textContent = m.minutes ? "Có biên bản" : "Chưa có biên bản"; $("vState").className = "pill " + (m.minutes?"ok":"warn");
+const spkIndex = (m, s) => Math.max(0, Object.keys(m.names).indexOf(s)) % 6 + 1;
+function avatar(m, s, cls){ const i = spkIndex(m, s), a = el("div", "av" + (cls ? " " + cls : ""), (m.names[s] || s).trim().split(/\s+/).pop()[0].toUpperCase());
+  a.style.background = `var(--s${i})`; a.style.color = `var(--s${i}t)`; return a; }
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+function setTab(t){ S.tab = t; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  ["min","task","tr","spk"].forEach(x => $("tab_"+x).hidden = x !== t); }
+function openMeeting(m){ S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent=""; $("minProg").hidden = true;
+  $("vTitle").textContent = m.title;
+  const ch = $("vChips"); ch.innerHTML = "";
+  if (m.date) ch.append(withIcon("span","chip","cal", fmtDate(m.date)));
+  if (m.durationText) ch.append(withIcon("span","chip","clock", shortDur(m.durationText)));
+  ch.append(withIcon("span","chip","people", Object.keys(m.names).length + " người nói"));
+  ch.append(m.minutes ? withIcon("span","chip ok","check","Đã có biên bản") : el("span","chip warn","Chưa có biên bản"));
+  const tasks = (m.minutes?.viec_theo_doi)||[]; const open = tasks.filter(t=>!t.xong).length;
+  document.querySelector('.seg [data-tab="task"]').innerHTML = "Đầu việc" + (open ? ` <span class="count">${open}</span>` : "");
   const box = $("spkBox"); box.innerHTML="";
-  for (const s of Object.keys(m.names)){ const first = m.utts.find(u=>u.s===s);
-    const tag = document.createElement("span"); tag.className="tag"; tag.textContent = "Người " + s;
-    const wrap = document.createElement("div"); wrap.style.display="grid"; wrap.style.gap="2px"; wrap.style.minWidth="0";
-    const inp = document.createElement("input"); inp.id = "name_" + s; inp.value = m.names[s]; inp.placeholder = "Tên thật";
-    const hint = document.createElement("span"); hint.className="muted"; hint.style.fontSize="12.5px";
-    hint.textContent = first ? "“" + first.t.slice(0,90) + (first.t.length>90?"…":"") + "”" : "";
-    wrap.append(inp, hint); box.append(tag, wrap); }
-  renderTranscript(m); renderMinutes(m); show("scrMeet"); }
+  const dl = $("peopleList"); dl.innerHTML = ""; (m.people||"").split(/[,;]/).map(s=>s.trim()).filter(Boolean).forEach(n => { const o = el("option"); o.value = n; dl.appendChild(o); });
+  for (const s of Object.keys(m.names)){ const said = m.utts.filter(u=>u.s===s); const first = said.find(u=>u.t.length > 25) || said[0];
+    const c = el("div","spkcard"); const right = el("div");
+    const inp = el("input"); inp.id = "name_" + s; inp.value = m.names[s]; inp.placeholder = `Tên thật của Người ${s}`; inp.setAttribute("list","peopleList");
+    right.append(el("span","n", `Người ${s} · nói ${said.length} lần`), first ? el("span","q", "“" + first.t.slice(0,110) + (first.t.length>110?"…":"") + "”") : el("span"), inp);
+    c.append(avatar(m, s), right); box.appendChild(c); }
+  renderTranscript(m); renderMinutes(m); renderTasks(m);
+  $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản";
+  setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; }
 function renderTranscript(m){ const v = $("tView"); v.innerHTML="";
-  for (const u of m.utts){ const d = document.createElement("div"); d.className="utt";
-    const h = document.createElement("div"); h.className="who"; h.textContent = who(m,u.s);
-    const t = document.createElement("span"); t.className="t"; t.textContent = hms(u.a/1000); h.appendChild(t);
-    const p = document.createElement("p"); p.textContent = u.t; d.append(h,p); v.appendChild(d); } }
+  for (const u of m.utts){ const d = el("div","utt"); const bub = el("div","bubble");
+    const h = el("div","h", who(m,u.s)); h.style.color = `var(--s${spkIndex(m,u.s)}t)`; h.append(el("span","", hms(u.a/1000)));
+    bub.append(h, el("p","", u.t)); d.append(avatar(m, u.s), bub); v.appendChild(d); } }
 $("btnSaveNames").onclick = async () => { const m = S.cur;
   for (const s of Object.keys(m.names)) m.names[s] = $("name_"+s).value.trim();
-  await saveMeeting(m); renderTranscript(m); toast("Đã lưu tên người nói"); };
+  await saveMeeting(m); S.tab = "tr"; openMeeting(m); toast("Đã lưu tên người nói"); };
 $("btnDel").onclick = async () => { if ($("delConfirm").hidden){ $("delConfirm").hidden=false; return; }
-  await delMeeting(S.cur.id); toast("Đã xoá"); openHome(); };
+  await delMeeting(S.cur.id); toast("Đã xoá cuộc họp"); openHome(); };
 
 /* ---------- Biên bản ---------- */
 function transcriptText(m){ return m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`).join("\n"); }
@@ -426,15 +652,16 @@ const SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (kh�
 "viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
 "ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],
 "can_xac_nhan":["các điểm cần kiểm tra lại"]}`;
-async function callLLM(content, maxTokens, label){ const btn = $("btnMinutes"); let r, raw = "", j = {};
+function minStatus(t){ $("minProg").hidden = !t; $("minProgText").textContent = t || ""; }
+async function callLLM(content, maxTokens, label){ let r, raw = "", j = {};
   for (let attempt = 1; attempt <= 6; attempt++){
-    btn.textContent = label;
+    minStatus(label);
     r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
       body: JSON.stringify({model:S.model, max_tokens:maxTokens, messages:[{role:"user", content}]})});
     raw = await r.text(); try{ j = JSON.parse(raw); }catch(e){ j = {}; }
     if ((r.status !== 429 && r.status < 500) || attempt === 6) break;
     const wait = Math.max(parseInt(r.headers.get("retry-after")) || 0, 65); // giới hạn tính theo phút: đợi qua phút mới
-    for (let s = wait; s > 0; s--){ btn.textContent = `${label} Đang chờ hạn mức, còn ${s} giây…`; await new Promise(z=>setTimeout(z,1000)); }
+    for (let s = wait; s > 0; s--){ minStatus(`${label} Đang chờ hạn mức, còn ${s} giây…`); await new Promise(z=>setTimeout(z,1000)); }
   }
   if (!r.ok){ const msg = (j.error && (j.error.message || (typeof j.error === "string" ? j.error : JSON.stringify(j.error)))) || j.message || raw.slice(0,300);
     throw new Error("Lỗi " + r.status + (msg ? " – " + msg : "")); }
@@ -471,7 +698,8 @@ const NOTE_SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ
 Ghi ngắn gọn, đủ ý, không lặp lại. Mỗi mục tối đa 1–2 câu.`;
 const CHUNK_CHARS = 7000;
 $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinutes"); $("minErr").textContent="";
-  btn.disabled = true; S.busy = true; try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
+  btn.disabled = true; btn.textContent = "Đang tạo…"; S.busy = true; setTab("min"); window.scrollTo(0,0);
+  try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
   try{
     const info = `Thông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
     const lines = m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`);
@@ -487,23 +715,37 @@ $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinut
       }
       obj = await callJSON(`${INSTR}\n\n${info}\nDưới đây là ghi chú của ${parts.length} phần liên tiếp trong cùng một cuộc họp. Hãy gộp thành MỘT biên bản hoàn chỉnh: bỏ trùng lặp, nối các ý liên quan, việc nào được nhắc nhiều lần thì giữ thông tin mới nhất.\n\n${SCHEMA}\n\nGHI CHÚ CÁC PHẦN:\n${JSON.stringify(notes)}`, 6000, "Đang gộp thành biên bản…");
     }
-    m.minutes = obj; await saveMeeting(m); openMeeting(m); toast("Đã tạo biên bản");
-  }catch(e){ $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude”."; }
-  finally{ S.busy=false; try{ wake && wake.release(); }catch(e){} btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động"; } };
-function renderMinutes(m){ const v = $("minutesView"); v.innerHTML=""; $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động";
-  if (!m.minutes){ v.innerHTML = `<p class="muted">Chưa có biên bản. Đặt tên người nói trước để biên bản ghi đúng tên, rồi bấm "Tạo biên bản tự động".</p>`; return; }
-  const x = m.minutes, el = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
-  const sec = (title, node) => { const d = document.createElement("div"); d.className="sec"; d.append(el("h3", title), node); v.appendChild(d); };
-  sec("Tóm tắt", el("p", x.tom_tat||""));
-  const ul = arr => { const u = document.createElement("ul"); (arr||[]).forEach(s => u.appendChild(el("li", s))); return u; };
-  const table = (heads, rows) => { const w = document.createElement("div"); w.className="tbl"; const t = document.createElement("table");
-    const tr = document.createElement("tr"); heads.forEach(h => tr.appendChild(el("th", h))); t.appendChild(tr);
-    rows.forEach(r => { const tr = document.createElement("tr"); r.forEach(c => tr.appendChild(el("td", c||""))); t.appendChild(tr); }); w.appendChild(t); return w; };
-  sec("Điểm chính", table(["Chủ đề","Nội dung","Kết luận"], (x.diem_chinh||[]).map(d=>[d.chu_de,d.noi_dung,d.ket_luan])));
-  if ((x.quyet_dinh||[]).length) sec("Quyết định", ul(x.quyet_dinh));
-  sec("Việc cần theo dõi", table(["Việc","Ai","Hạn","Ưu tiên"], (x.viec_theo_doi||[]).map(d=>[d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien])));
-  sec("Kế hoạch tiếp theo", ul((x.ke_hoach||[]).map(k => k.noi_dung + (k.thoi_gian ? " — " + k.thoi_gian : ""))));
-  if ((x.can_xac_nhan||[]).length) sec("Cần xác nhận lại", ul(x.can_xac_nhan)); }
+    m.minutes = obj; await saveMeeting(m); minStatus(""); S.tab = "min"; openMeeting(m); toast("Đã tạo biên bản");
+  }catch(e){ minStatus(""); $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude” ở cuối trang."; }
+  finally{ S.busy=false; try{ wake && wake.release(); }catch(e){} btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản"; } };
+function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
+  if (!m.minutes){ const e = el("div","card empty"); const blob = el("div","blob"); blob.innerHTML = ICON.doc;
+    e.append(blob, el("h2","","Chưa có biên bản"), el("p","muted","Đặt tên người nói trước (tab Người nói) để biên bản ghi đúng tên, rồi bấm “Tạo biên bản” ở dưới."));
+    v.appendChild(e); return; }
+  const x = m.minutes;
+  const card = (title, ...nodes) => { const c = el("div","card"); c.append(el("h2","",title), ...nodes); v.appendChild(c); return c; };
+  card("Tóm tắt", el("p","sum", x.tom_tat || ""));
+  if ((x.diem_chinh||[]).length){ const wrap = el("div");
+    x.diem_chinh.forEach(d => { const p = el("div","pt"); p.append(el("b","",d.chu_de||""), el("p","",d.noi_dung||""));
+      if (d.ket_luan){ p.append(withIcon("span","concl","check", d.ket_luan)); } wrap.appendChild(p); });
+    card("Điểm chính", wrap); }
+  if ((x.quyet_dinh||[]).length){ const ul = el("ul","list-ic"); x.quyet_dinh.forEach(q => { const li = el("li"); li.innerHTML = ICON.star; li.append(el("span","",q)); ul.appendChild(li); }); card("Quyết định", ul); }
+  if ((x.ke_hoach||[]).length){ const ul = el("ul","timeline"); x.ke_hoach.forEach(k => { const li = el("li"); li.append(el("span","",k.noi_dung||"")); if (k.thoi_gian) li.append(el("small","",k.thoi_gian)); ul.appendChild(li); }); card("Kế hoạch tiếp theo", ul); }
+  if ((x.can_xac_nhan||[]).length){ const ul = el("ul","list-ic"); x.can_xac_nhan.forEach(q => ul.appendChild(el("li","",q))); card("Cần xác nhận lại", ul).classList.add("warnc"); } }
+function renderTasks(m){ const v = $("tab_task"); v.innerHTML = ""; const tasks = (m.minutes?.viec_theo_doi)||[];
+  if (!tasks.length){ v.appendChild(el("p","muted", m.minutes ? "Cuộc họp này không có việc cần theo dõi." : "Tạo biên bản để xem danh sách việc cần làm.")); return; }
+  v.appendChild(el("p","muted","Chạm vào một việc để đánh dấu đã xong. Trạng thái được ghi vào file Excel."));
+  tasks.forEach((t, i) => { const b = el("button","task" + (t.xong ? " done" : "")); const ck = el("span","check"); ck.innerHTML = ICON.check;
+    const body = el("div"); body.append(el("span","tt", t.cong_viec || ""));
+    const chips = el("div","chips");
+    if (t.nguoi_phu_trach) chips.append(withIcon("span","chip","user", t.nguoi_phu_trach));
+    if (t.han) chips.append(withIcon("span","chip","cal", t.han));
+    if (t.uu_tien){ const u = (t.uu_tien||"").toLowerCase(); chips.append(el("span","chip " + (u.startsWith("cao") ? "hi" : u.startsWith("th") ? "lo" : "mid"), t.uu_tien)); }
+    body.append(chips); if (t.ghi_chu) body.append(el("p","muted", t.ghi_chu));
+    b.append(ck, body);
+    b.onclick = async () => { t.xong = !t.xong; await saveMeeting(m); renderTasks(m);
+      const open = tasks.filter(x=>!x.xong).length; document.querySelector('.seg [data-tab="task"]').innerHTML = "Đầu việc" + (open ? ` <span class="count">${open}</span>` : ""); };
+    v.appendChild(b); }); }
 $("btnCopy").onclick = async () => { const m = S.cur;
   const txt = `Chủ đề: ${m.title}\nNgày: ${fmtDate(m.date)}\nNgười tham dự: ${m.people||""}\n\nLỜI THOẠI (đã chia theo người nói):\n${transcriptText(m)}`;
   try{ await navigator.clipboard.writeText(txt); toast("Đã sao chép. Mở Dự án Biên bản họp trong Claude và dán vào."); }
@@ -521,12 +763,12 @@ $("btnExcel").onclick = () => { const m = S.cur, x = m.minutes || {};
     ...(x.quyet_dinh||[]).map((d,i)=>[i+1,d]),[],["CẦN XÁC NHẬN LẠI"],...(x.can_xac_nhan||[]).map(d=>["•",d])];
   add("Biên bản", r1, [16,30,50,35]);
   add("Việc cần theo dõi", [["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
-    ...(x.viec_theo_doi||[]).map((d,i)=>[i+1,d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien,"Chưa làm",d.ghi_chu])], [5,45,20,16,12,12,30]);
+    ...(x.viec_theo_doi||[]).map((d,i)=>[i+1,d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien,d.xong ? "Đã xong" : "Chưa làm",d.ghi_chu])], [5,45,20,16,12,12,30]);
   add("Kế hoạch tiếp theo", [["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
     ...(x.ke_hoach||[]).map((d,i)=>[i+1,d.noi_dung,d.thoi_gian,d.ghi_chu])], [5,50,20,30]);
   add("Lời thoại", [["Thời điểm","Người nói","Nội dung"], ...m.utts.map(u=>[hms(u.a/1000), who(m,u.s), u.t])], [10,18,90]);
   const slug = (m.title||"cuoc-hop").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
-  XLSX.writeFile(wb, `BienBan_${m.date||"ngay"}_${slug}.xlsx`); };
+  XLSX.writeFile(wb, `BienBan_${m.date||"ngay"}_${slug}.xlsx`); toast("Đang mở file Excel…"); };
 
 /* ---------- Khởi động ---------- */
 if (!window.crypto || !crypto.subtle) document.body.innerHTML = "<p style='padding:20px'>Trình duyệt này không hỗ trợ mã hoá. Hãy mở bằng Safari trên iPhone (iOS 15 trở lên).</p>";
