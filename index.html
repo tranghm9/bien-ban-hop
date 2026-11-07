@@ -760,7 +760,7 @@ $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinut
       }
       obj = await callJSON(`${INSTR}\n\n${info}\nDưới đây là ghi chú của ${parts.length} phần liên tiếp trong cùng một cuộc họp. Hãy gộp thành MỘT biên bản hoàn chỉnh: bỏ trùng lặp, nối các ý liên quan, việc nào được nhắc nhiều lần thì giữ thông tin mới nhất.\n\n${SCHEMA}\n\nGHI CHÚ CÁC PHẦN:\n${JSON.stringify(notes)}`, 6000, "Đang gộp thành biên bản…");
     }
-    m.minutes = obj; await saveMeeting(m); minStatus(""); S.tab = "min"; openMeeting(m); toast("Đã tạo biên bản");
+    m.minutes = obj; delete m.lastChanges; m.lich_su = []; await saveMeeting(m); minStatus(""); S.tab = "min"; openMeeting(m); toast("Đã tạo biên bản");
   }catch(e){ minStatus(""); $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude” ở cuối trang."; }
   finally{ S.busy=false; try{ wake && wake.release(); }catch(e){} btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản"; } };
 function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
@@ -769,6 +769,11 @@ function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
     v.appendChild(e); return; }
   const x = m.minutes;
   const card = (title, ...nodes) => { const c = el("div","card"); c.append(el("h2","",title), ...nodes); v.appendChild(c); return c; };
+  if (m.lastChanges){ const c = el("div","card okc"); const top = el("div","cxbtns"); top.style.justifyContent = "space-between";
+    const close = el("button","ghost","Đóng"); close.onclick = async () => { delete m.lastChanges; await saveMeeting(m); renderMinutes(m); };
+    const hh = withIcon("h2","","check"," Biên bản vừa được cập nhật"); hh.style.cssText = "flex:1;font-size:17px;display:flex;gap:6px;align-items:center"; top.style.flexWrap = "nowrap"; top.append(hh, close); const ul = el("ul","list-ic");
+    m.lastChanges.thay_doi.forEach(t => { const li = el("li"); li.innerHTML = ICON.check; li.append(el("span","",t)); ul.append(li); });
+    c.append(top, ul); v.appendChild(c); }
   card("Tóm tắt", el("p","sum", x.tom_tat || ""));
   if ((x.diem_chinh||[]).length){ const wrap = el("div");
     x.diem_chinh.forEach(d => { const p = el("div","pt"); p.append(el("b","",d.chu_de||""), el("p","",d.noi_dung||""));
@@ -778,21 +783,55 @@ function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
   if ((x.ke_hoach||[]).length){ const ul = el("ul","timeline"); x.ke_hoach.forEach(k => { const li = el("li"); li.append(el("span","",k.noi_dung||"")); if (k.thoi_gian) li.append(el("small","",k.thoi_gian)); ul.appendChild(li); }); card("Kế hoạch tiếp theo", ul); }
   const cx = confirmItems(m); if (cx.length){ const c = card("Cần xác nhận lại"); c.id = "confirmCard"; c.classList.add(cx.some(q=>!q.ok) ? "warnc" : "okc");
     c.append(el("p","muted","AI chưa chắc chắn các điểm dưới đây (tên, con số, hạn chót nghe chưa rõ). Xem lại đoạn hội thoại, rồi bấm Đúng rồi, hoặc gõ thông tin đúng và bấm Lưu."));
-    cx.forEach(q => c.append(confirmRow(m, q))); } }
+    cx.forEach(q => c.append(confirmRow(m, q)));
+    if (cx.some(q => q.ok && !q.applied)){ const b = el("button","primary","Cập nhật biên bản"); b.onclick = () => applyConfirmations(m); c.append(b); } }
+  if ((m.lich_su||[]).length){ const h = el("details","card"); h.append(el("summary","", `Lịch sử chỉnh sửa (${m.lich_su.length})`));
+    m.lich_su.slice().reverse().forEach(e => { const d = el("div"); d.append(el("p","muted", e.luc)); const ul = el("ul","list-ic"); e.thay_doi.forEach(t => { const li = el("li"); li.innerHTML = ICON.check; li.append(el("span","",t)); ul.append(li); }); d.append(ul); h.append(d); });
+    v.appendChild(h); } }
 function confirmItems(m){ const x = m.minutes || {}; x.can_xac_nhan = (x.can_xac_nhan||[]).map(q => typeof q === "string" ? {noi_dung:q} : q); return x.can_xac_nhan; }
 const toMs = t => { const p = String(t||"").match(/(\d+):(\d+)(?::(\d+))?/); if (!p) return null; return (p[3] != null ? (+p[1]*3600 + +p[2]*60 + +p[3]) : (+p[1]*60 + +p[2]))*1000; };
 function confirmRow(m, q){ const r = el("div","cx" + (q.ok ? " ok" : ""));
   r.append(el("p","cxq", q.noi_dung || ""));
   const ms = toMs(q.thoi_diem);
-  if (q.ok){ const done = withIcon("span","concl","check", q.sua ? "Đã sửa: " + q.sua : "Đã xác nhận đúng"); const redo = el("button","ghost","Sửa lại");
-    redo.onclick = async () => { q.ok = false; await saveMeeting(m); openMeeting(m, "min", true); };
+  if (q.ok){ const done = withIcon("span","concl","check", (q.sua ? "Đã sửa: " + q.sua : "Đã xác nhận đúng") + (q.applied ? " · đã cập nhật vào biên bản" : " · chưa cập nhật vào biên bản")); const redo = el("button","ghost","Sửa lại");
+    redo.onclick = async () => { q.ok = false; q.applied = false; await saveMeeting(m); openMeeting(m, "min", true); };
     const row = el("div","cxbtns"); row.append(done, redo); if (ms != null){ const j = withIcon("button","ghost","clock", hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); } r.append(row); return r; }
   const inp = el("input"); inp.placeholder = "Thông tin đúng (nếu cần sửa)";
   const row = el("div","cxbtns");
   if (ms != null){ const j = withIcon("button","","clock", "Xem lời thoại " + hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); }
   const ok = el("button","primary", "Đúng rồi"); inp.oninput = () => ok.textContent = inp.value.trim() ? "Lưu" : "Đúng rồi";
-  ok.onclick = async () => { q.ok = true; q.sua = inp.value.trim(); await saveMeeting(m); toast(q.sua ? "Đã lưu thông tin đúng" : "Đã xác nhận"); openMeeting(m, "min", true); };
+  ok.onclick = async () => { q.ok = true; q.applied = false; q.sua = inp.value.trim(); await saveMeeting(m); await applyConfirmations(m); };
   row.append(ok); r.append(inp, row); return r; }
+// Đưa các xác nhận của người dùng vào nội dung biên bản (sửa ở mọi chỗ liên quan)
+async function applyConfirmations(m){ const items = confirmItems(m).filter(q => q.ok && !q.applied); if (!items.length) return openMeeting(m, "min", true);
+  if (S.busy) return toast("Đang xử lý, chờ chút nhé"); S.busy = true; $("minErr").textContent = ""; setTab("min"); window.scrollTo(0,0);
+  ["btnMinutes","btnExcel"].forEach(b => $(b).disabled = true);
+  try{
+    const bb = JSON.parse(JSON.stringify(m.minutes)); delete bb.can_xac_nhan;
+    const xn = items.map(q => q.sua ? {diem_can_xac_nhan:q.noi_dung, thong_tin_dung:q.sua} : {diem_can_xac_nhan:q.noi_dung, ket_qua:"Người dự họp xác nhận nội dung hiện tại là ĐÚNG"});
+    const res = await callJSON(`Bạn là thư ký cuộc họp. Dưới đây là biên bản (JSON) và các xác nhận của người dự họp cho những điểm trước đây chưa chắc chắn.
+Hãy CẬP NHẬT biên bản:
+- Với điểm có "thong_tin_dung": thay thông tin cũ bằng thông tin đúng ở MỌI chỗ liên quan (tóm tắt, điểm chính, quyết định, đầu việc: người phụ trách / hạn, kế hoạch).
+- Với điểm được xác nhận ĐÚNG: giữ nội dung, chỉ bỏ ghi chú "[cần xác nhận]" liên quan.
+- Không thay đổi bất kỳ nội dung nào khác. Giữ nguyên cấu trúc, thứ tự và trường "xong" của từng đầu việc.
+Trả về DUY NHẤT JSON hợp lệ: {"bien_ban":{...cùng cấu trúc như biên bản đầu vào...},"thay_doi":["mô tả ngắn từng chỗ đã sửa, ví dụ: Hạn việc 'Soạn memo' → 25/11/2026"]}
+
+BIÊN BẢN HIỆN TẠI:
+${JSON.stringify(bb)}
+
+CÁC XÁC NHẬN:
+${JSON.stringify(xn)}`, 6000, "Đang cập nhật biên bản theo xác nhận của bạn…");
+    const nb = res.bien_ban && typeof res.bien_ban === "object" ? res.bien_ban : null;
+    if (!nb || !nb.tom_tat) throw new Error("câu trả lời thiếu nội dung biên bản");
+    const oldTasks = m.minutes.viec_theo_doi || [];
+    (nb.viec_theo_doi||[]).forEach((t,i) => { if (t.xong == null && oldTasks[i]) t.xong = oldTasks[i].xong; });
+    nb.can_xac_nhan = m.minutes.can_xac_nhan; items.forEach(q => q.applied = true);
+    const changes = Array.isArray(res.thay_doi) ? res.thay_doi.filter(Boolean) : [];
+    m.minutes = nb; (m.lich_su ||= []).push({luc: new Date().toLocaleString("vi-VN"), thay_doi: changes.length ? changes : items.map(q => "Xác nhận: " + q.noi_dung)});
+    m.lastChanges = m.lich_su[m.lich_su.length-1];
+    await saveMeeting(m); minStatus(""); toast("Biên bản đã được cập nhật");
+  }catch(e){ minStatus(""); $("minErr").textContent = "Đã lưu xác nhận nhưng chưa cập nhật được vào biên bản: " + e.message + "\nBấm “Cập nhật biên bản” trong phần Cần xác nhận lại để thử lại."; }
+  finally{ S.busy = false; ["btnMinutes","btnExcel"].forEach(b => $(b).disabled = false); const err = $("minErr").textContent; openMeeting(m, "min"); $("minErr").textContent = err; } }
 function jumpTo(ms){ setTab("tr"); const items = [...document.querySelectorAll("#tView .utt")]; if (!items.length) return;
   let best = items[0]; for (const it of items){ if (+it.dataset.ms <= ms + 1500) best = it; else break; }
   best.scrollIntoView({block:"center"}); best.classList.remove("hl"); best.offsetWidth; best.classList.add("hl"); }
@@ -839,7 +878,8 @@ $("btnExcel").onclick = () => { const m = S.cur, x = m.minutes || {};
     [],["TÓM TẮT"],[x.tom_tat || "(Chưa tạo biên bản tự động)"],[],["CÁC ĐIỂM CHÍNH"],["STT","Chủ đề","Nội dung chính","Ý kiến/kết luận"],
     ...(x.diem_chinh||[]).map((d,i)=>[i+1,d.chu_de,d.noi_dung,d.ket_luan]),[],["QUYẾT ĐỊNH"],["STT","Quyết định"],
     ...(x.quyet_dinh||[]).map((d,i)=>[i+1,d]),[],["CẦN XÁC NHẬN LẠI"],["STT","Điểm cần xác nhận","Thời điểm","Trạng thái","Thông tin đúng"],
-    ...(x.can_xac_nhan||[]).map((d,i)=>{ d = typeof d === "string" ? {noi_dung:d} : d; return [i+1,d.noi_dung,d.thoi_diem||"",d.ok ? "Đã xác nhận" : "Chưa xác nhận",d.sua||""]; })];
+    ...(x.can_xac_nhan||[]).map((d,i)=>{ d = typeof d === "string" ? {noi_dung:d} : d; return [i+1,d.noi_dung,d.thoi_diem||"",d.ok ? (d.applied ? "Đã xác nhận, đã cập nhật" : "Đã xác nhận") : "Chưa xác nhận",d.sua||""]; }),
+    [],["LỊCH SỬ CHỈNH SỬA"],...(m.lich_su||[]).flatMap(e => e.thay_doi.map(t => [e.luc, t]))];
   add("Biên bản", r1, [16,40,50,16,35]);
   add("Việc cần theo dõi", [["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
     ...(x.viec_theo_doi||[]).map((d,i)=>[i+1,d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien,d.xong ? "Đã xong" : "Chưa làm",d.ghi_chu])], [5,45,20,16,12,12,30]);
