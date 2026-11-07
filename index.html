@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Biên bản">
+<meta name="theme-color" content="#1d3a5f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Biên Bản Họp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<script src="xlsx.full.min.js"></script>
+<style>
+/* Layout: one narrow column, a header bar, and screens that swap. Built for one hand on an iPhone. */
+:root{
+  --bg:#f3f5f8; --card:#ffffff; --fg:#17212e; --muted:#5d6b7c; --line:#dde3ea;
+  --accent:#1d3a5f; --accent-fg:#ffffff; --soft:#e6edf6; --rec:#c62f2f; --ok:#1f7a4d; --warn:#9a6200;
+  --font:"Be Vietnam Pro",-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f141b; --card:#18202b; --fg:#e7edf4; --muted:#93a1b2; --line:#2a3544;
+  --accent:#8fb4e3; --accent-fg:#0f141b; --soft:#1f2a38; --rec:#ef6a6a; --ok:#5cc792; --warn:#e0b25a;
+  color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);
+  padding:env(safe-area-inset-top,0) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));}
+[hidden]{display:none!important}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:14px 10px}
+header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:-.01em}
+main{max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-bottom:14px}
+h2{font-size:16px;margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted);font-size:13.5px}
+label{display:grid;gap:4px;font-size:13.5px;color:var(--muted);font-weight:500}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+textarea{min-height:90px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{font:inherit;font-weight:600;border:0;border-radius:11px;padding:12px 16px;cursor:pointer;background:var(--soft);color:var(--fg)}
+button.primary{background:var(--accent);color:var(--accent-fg)}
+button.rec{background:var(--rec);color:#fff}
+button.small{padding:7px 12px;font-size:13.5px}
+button.link{background:none;padding:6px 4px;color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 auto}
+.list{display:grid;gap:8px}
+.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);text-align:left;width:100%;color:var(--fg);font-weight:400}
+.item b{display:block;font-weight:600}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--muted);white-space:nowrap;font-weight:600}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)}
+.timer{font:700 40px/1 var(--mono);text-align:center;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rec);margin-right:6px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.steps{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.steps li{display:flex;gap:8px;align-items:baseline;color:var(--muted)}
+.steps li.on{color:var(--fg);font-weight:600}
+.steps li.done{color:var(--ok)}
+.transcript{display:grid;gap:10px;max-height:55vh;overflow:auto;padding-right:4px}
+.utt{display:grid;gap:2px}
+.utt .who{font-size:12.5px;font-weight:700;color:var(--accent)}
+.utt .t{font:12px var(--mono);color:var(--muted);font-weight:400;margin-left:6px}
+.spk{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+.spk .tag{font-weight:700;color:var(--accent);min-width:84px;font-size:13.5px}
+.err{color:var(--rec);font-size:14px;white-space:pre-wrap}
+.sec h3{font-size:14px;margin:6px 0 4px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.sec ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.tbl{overflow-x:auto}
+.tbl table{border-collapse:collapse;width:100%;font-size:13.5px}
+.tbl th,.tbl td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.tbl th{background:var(--soft)}
+.pin{font:700 26px var(--mono);letter-spacing:.4em;text-align:center}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;max-width:90vw;z-index:20}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Biên Bản Họp</h1>
+  <div class="row" style="flex:0 0 auto">
+    <button class="link small" id="btnHome" hidden>Danh sách</button>
+    <button class="link small" id="btnSettings" hidden>Cài đặt</button>
+    <button class="link small" id="btnLock" hidden>Khoá</button>
+  </div>
+</header>
+
+<!-- Khoá / tạo mã PIN -->
+<section id="scrLock" hidden>
+  <div class="card">
+    <h2 id="lockTitle">Mở khoá</h2>
+    <p class="muted" id="lockHint">Nhập mã PIN để mở dữ liệu biên bản.</p>
+    <input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="••••••">
+    <input id="pin2" class="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="nhập lại" hidden>
+    <button class="primary" id="btnUnlock">Mở khoá</button>
+    <p class="err" id="lockErr"></p>
+  </div>
+</section>
+
+<!-- Cài đặt -->
+<section id="scrSettings" hidden>
+  <div class="card">
+    <h2>Khoá dịch vụ AssemblyAI</h2>
+    <p class="muted">Dán khoá API (API key) lấy từ trang AssemblyAI. Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
+    <input id="apiKey" type="password" autocomplete="off" placeholder="Dán khoá API vào đây">
+    <label>Mô hình viết biên bản
+      <select id="llmModel">
+        <option value="claude-sonnet-4-6">Claude Sonnet (khuyên dùng)</option>
+        <option value="claude-haiku-4-5-20251001">Claude Haiku (rẻ hơn)</option>
+      </select>
+    </label>
+    <button class="primary" id="btnSaveKey">Lưu</button>
+    <p class="muted" id="keyStatus"></p>
+  </div>
+  <div class="card">
+    <h2>Đổi mã PIN / xoá dữ liệu</h2>
+    <p class="muted">Quên mã PIN thì không mở lại được dữ liệu cũ. Xoá toàn bộ sẽ xoá khoá API và mọi biên bản trên máy này.</p>
+    <button id="btnWipe">Xoá toàn bộ dữ liệu</button>
+    <p class="err" id="wipeConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
+  </div>
+</section>
+
+<!-- Danh sách cuộc họp -->
+<section id="scrHome" hidden>
+  <button class="primary" id="btnNew" style="width:100%;margin-bottom:14px">+ Cuộc họp mới</button>
+  <div class="list" id="meetList"></div>
+  <p class="muted" id="emptyList" style="text-align:center;padding:30px 0">Chưa có biên bản nào. Bấm "Cuộc họp mới" để bắt đầu.</p>
+</section>
+
+<!-- Cuộc họp mới -->
+<section id="scrNew" hidden>
+  <div class="card">
+    <h2>Thông tin cuộc họp</h2>
+    <label>Chủ đề<input id="mTitle" placeholder="Ví dụ: Họp tiến độ dự án X"></label>
+    <label>Ngày họp<input id="mDate" type="date"></label>
+    <label>Người tham dự (không bắt buộc)<input id="mPeople" placeholder="Ví dụ: anh Minh, chị Lan, Trang"></label>
+    <label>Số người nói (ước lượng, không bắt buộc)<input id="mSpeakers" type="number" min="1" max="20" inputmode="numeric" placeholder="Để trống nếu không rõ"></label>
+  </div>
+  <div class="card">
+    <h2>Ghi âm</h2>
+    <div class="row">
+      <button class="rec" id="btnRec">● Ghi âm ngay</button>
+      <button id="btnPick">Chọn file ghi âm</button>
+    </div>
+    <input type="file" id="fileIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.mp4" hidden>
+    <div id="recBox" hidden class="card" style="margin:0">
+      <div class="timer" id="recTime">00:00:00</div>
+      <p class="muted" style="text-align:center"><span class="dot"></span>Đang ghi. Giữ màn hình mở, không chuyển sang app khác.</p>
+      <button class="primary" id="btnStop">■ Dừng ghi</button>
+    </div>
+    <p class="muted" id="fileInfo"></p>
+    <p class="muted">Mẹo: với cuộc họp dài, an toàn nhất là ghi bằng app Ghi âm (Voice Memos), sau đó bấm <b>Chia sẻ → Lưu vào Tệp</b>, rồi bấm "Chọn file ghi âm" ở đây.</p>
+  </div>
+  <button class="primary" id="btnProcess" style="width:100%" disabled>Chuyển thành chữ &amp; nhận diện người nói</button>
+  <p class="err" id="newErr"></p>
+</section>
+
+<!-- Đang xử lý -->
+<section id="scrWork" hidden>
+  <div class="card">
+    <h2>Đang xử lý</h2>
+    <ul class="steps" id="steps">
+      <li data-s="up">Tải file ghi âm lên</li>
+      <li data-s="tr">Chuyển giọng nói thành chữ, phân biệt người nói</li>
+      <li data-s="save">Lưu kết quả trên máy</li>
+    </ul>
+    <p class="muted" id="workNote">Cuộc họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.</p>
+    <p class="err" id="workErr"></p>
+    <button id="btnWorkBack" hidden>Quay lại</button>
+  </div>
+</section>
+
+<!-- Kết quả -->
+<section id="scrMeet" hidden>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 id="vTitle" style="flex:1 1 60%"></h2>
+      <span class="pill" id="vState"></span>
+    </div>
+    <p class="muted" id="vMeta"></p>
+  </div>
+  <div class="card">
+    <h2>Đặt tên người nói</h2>
+    <p class="muted">Máy phân biệt người nói theo đặc điểm giọng và đặt tên tạm là A, B, C. Đọc vài câu đầu của mỗi người rồi gõ tên thật vào.</p>
+    <div class="spk" id="spkBox"></div>
+    <button class="small" id="btnSaveNames">Lưu tên</button>
+  </div>
+  <div class="card">
+    <h2>Biên bản</h2>
+    <div id="minutesView"></div>
+    <div class="row">
+      <button class="primary" id="btnMinutes">Tạo biên bản tự động</button>
+      <button id="btnExcel">Tải file Excel</button>
+    </div>
+    <button class="small" id="btnCopy">Sao chép lời thoại để dán vào Claude</button>
+    <p class="err" id="minErr"></p>
+  </div>
+  <div class="card">
+    <h2>Lời thoại</h2>
+    <div class="transcript" id="tView"></div>
+  </div>
+  <button id="btnDel" style="width:100%">Xoá cuộc họp này</button>
+  <p class="err" id="delConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
+</section>
+</main>
+<div id="toast" hidden></div>
+
+<script>
+"use strict";
+const AAI = "https://api.assemblyai.com";
+const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
+const $ = id => document.getElementById(id);
+const screens = ["scrLock","scrSettings","scrHome","scrNew","scrWork","scrMeet"];
+function show(id){ screens.forEach(s => $(s).hidden = s !== id);
+  const unlocked = !!S.key; ["btnHome","btnSettings","btnLock"].forEach(b => $(b).hidden = !unlocked);
+  $("btnHome").hidden = !unlocked || id === "scrHome"; window.scrollTo(0,0); }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true,2600); }
+const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", audio:null, audioName:"", cur:null };
+
+/* ---------- Lưu trữ mã hoá (IndexedDB + AES-GCM, khoá suy ra từ mã PIN) ---------- */
+const te = new TextEncoder(), td = new TextDecoder();
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+async function deriveKey(pin, salt){
+  const base = await crypto.subtle.importKey("raw", te.encode(pin), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:250000, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function enc(obj){ const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, S.key, te.encode(JSON.stringify(obj)));
+  return {iv:b64(iv), ct:b64(ct)}; }
+async function dec(box){ const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(box.iv)}, S.key, unb64(box.ct));
+  return JSON.parse(td.decode(pt)); }
+let dbp;
+function db(){ return dbp ||= new Promise((res,rej)=>{ const r = indexedDB.open("bienban",1);
+  r.onupgradeneeded = () => r.result.createObjectStore("meetings",{keyPath:"id"});
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function tx(mode, fn){ const d = await db(); return new Promise((res,rej)=>{ const t = d.transaction("meetings", mode);
+  const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); }
+async function saveMeeting(m){ const box = await enc(m); await tx("readwrite", st => st.put({id:m.id, ...box})); }
+async function loadMeetings(){ const rows = await tx("readonly", st => st.getAll()); const out=[];
+  for (const r of rows||[]) { try{ out.push(await dec(r)); }catch(e){} } return out.sort((a,b)=>b.created-a.created); }
+async function delMeeting(id){ await tx("readwrite", st => st.delete(id)); }
+
+/* ---------- Mở khoá ---------- */
+const hasPin = () => !!lsGet("bb_salt");
+function initLock(){
+  const first = !hasPin();
+  $("lockTitle").textContent = first ? "Tạo mã PIN" : "Mở khoá";
+  $("lockHint").textContent = first ? "Đặt mã PIN (ít nhất 6 số). Mã này dùng để mã hoá khoá API và mọi biên bản trên máy. Hãy nhớ kỹ: quên mã là mất dữ liệu." : "Nhập mã PIN để mở dữ liệu biên bản.";
+  $("pin2").hidden = !first; $("btnUnlock").textContent = first ? "Tạo mã PIN" : "Mở khoá";
+  $("pin").value=""; $("pin2").value=""; $("lockErr").textContent=""; show("scrLock"); setTimeout(()=>$("pin").focus(),100);
+}
+$("btnUnlock").onclick = async () => {
+  const pin = $("pin").value.trim(); $("lockErr").textContent = "";
+  try{
+    if (!hasPin()){
+      if (pin.length < 6) return $("lockErr").textContent = "Mã PIN cần ít nhất 6 số.";
+      if (pin !== $("pin2").value.trim()) return $("lockErr").textContent = "Hai lần nhập không giống nhau.";
+      const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt);
+      lsSet("bb_salt", b64(salt)); lsSet("bb_check", JSON.stringify(await enc("ok")));
+    } else {
+      const k = await deriveKey(pin, unb64(lsGet("bb_salt")));
+      S.key = k; try{ await dec(JSON.parse(lsGet("bb_check"))); }catch(e){ S.key=null; return $("lockErr").textContent = "Sai mã PIN."; }
+    }
+    const cfg = lsGet("bb_cfg"); if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey=c.apiKey||""; S.model=c.model||S.model; }catch(e){} }
+    if (!S.apiKey) openSettings(); else openHome();
+  }catch(e){ $("lockErr").textContent = "Lỗi: " + e.message; }
+};
+$("pin").addEventListener("keydown", e => { if (e.key==="Enter" && $("pin2").hidden) $("btnUnlock").click(); });
+$("btnLock").onclick = () => { S.key=null; S.apiKey=""; S.cur=null; initLock(); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) S.hiddenAt = Date.now();
+  else if (S.key && !S.busy && !S.rec && S.hiddenAt && Date.now()-S.hiddenAt > 10*60*1000) $("btnLock").click(); });
+
+/* ---------- Cài đặt ---------- */
+function openSettings(){ $("apiKey").value = S.apiKey; $("llmModel").value = S.model;
+  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API."; $("wipeConfirm").hidden = true; show("scrSettings"); }
+$("btnSettings").onclick = openSettings;
+$("btnSaveKey").onclick = async () => {
+  const k = $("apiKey").value.trim(); if (!k) return $("keyStatus").textContent = "Chưa dán khoá.";
+  $("keyStatus").textContent = "Đang kiểm tra khoá…";
+  try{ const r = await fetch(AAI+"/v2/transcript?limit=1", {headers:{authorization:k}});
+    if (r.status===401) return $("keyStatus").textContent = "Khoá không đúng. Hãy sao chép lại từ trang AssemblyAI.";
+  }catch(e){ return $("keyStatus").textContent = "Không kết nối được mạng: " + e.message; }
+  S.apiKey = k; S.model = $("llmModel").value; lsSet("bb_cfg", JSON.stringify(await enc({apiKey:k, model:S.model})));
+  toast("Đã lưu khoá API"); openHome();
+};
+$("btnWipe").onclick = async () => {
+  if ($("wipeConfirm").hidden){ $("wipeConfirm").hidden=false; return; }
+  try{ localStorage.clear(); }catch(e){} const d = await db(); d.close(); dbp=null; indexedDB.deleteDatabase("bienban");
+  S.key=null; S.apiKey=""; toast("Đã xoá toàn bộ dữ liệu"); initLock();
+};
+
+/* ---------- Danh sách ---------- */
+async function openHome(){ show("scrHome"); const list = $("meetList"); list.innerHTML="";
+  const ms = await loadMeetings(); $("emptyList").hidden = ms.length>0;
+  for (const m of ms){ const b = document.createElement("button"); b.className="item";
+    const st = m.minutes ? ["ok","Có biên bản"] : ["warn","Chưa có biên bản"];
+    b.innerHTML = `<span><b></b><span class="muted"></span></span><span class="pill ${st[0]}">${st[1]}</span>`;
+    b.querySelector("b").textContent = m.title || "(Không tên)";
+    b.querySelector(".muted").textContent = fmtDate(m.date) + " · " + (m.durationText||"");
+    b.onclick = () => openMeeting(m); list.appendChild(b); } }
+$("btnHome").onclick = () => { if (!S.rec) openHome(); };
+const fmtDate = d => d ? d.split("-").reverse().join("/") : "";
+const hms = s => [Math.floor(s/3600), Math.floor(s%3600/60), Math.floor(s%60)].map(n=>String(n).padStart(2,"0")).join(":");
+
+/* ---------- Cuộc họp mới: ghi âm / chọn file ---------- */
+$("btnNew").onclick = () => { S.audio=null; $("fileInfo").textContent=""; $("newErr").textContent="";
+  $("mTitle").value=""; $("mPeople").value=""; $("mSpeakers").value=""; $("mDate").value = new Date().toLocaleDateString("sv");
+  $("btnProcess").disabled = true; $("recBox").hidden = true; show("scrNew"); };
+$("btnPick").onclick = () => $("fileIn").click();
+$("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (!f) return; setAudio(f, f.name); };
+function setAudio(blob, name){ S.audio = blob; S.audioName = name;
+  $("fileInfo").textContent = `Đã có file: ${name} (${(blob.size/1048576).toFixed(1)} MB)`; $("btnProcess").disabled = false; }
+let mr, chunks=[], t0, tick, wake;
+$("btnRec").onclick = async () => {
+  $("newErr").textContent = "";
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:true}});
+    const type = ["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+    mr = new MediaRecorder(stream, type ? {mimeType:type, audioBitsPerSecond:64000} : undefined); chunks=[];
+    mr.ondataavailable = e => e.data.size && chunks.push(e.data);
+    mr.onstop = () => { stream.getTracks().forEach(t=>t.stop()); clearInterval(tick); S.rec=false; try{ wake && wake.release(); }catch(e){}
+      const ext = (mr.mimeType||"").includes("mp4") ? "m4a" : "webm";
+      const blob = new Blob(chunks, {type: mr.mimeType || "audio/mp4"});
+      setAudio(blob, `ghi-am-${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${ext}`);
+      $("recBox").hidden = true; $("btnRec").disabled=false; $("btnPick").disabled=false;
+      offerSave(blob); };
+    mr.start(10000); S.rec=true; t0 = Date.now(); $("recBox").hidden=false; $("btnRec").disabled=true; $("btnPick").disabled=true;
+    tick = setInterval(()=> $("recTime").textContent = hms((Date.now()-t0)/1000), 500);
+    try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
+  }catch(e){ $("newErr").textContent = "Không mở được micro. Vào Cài đặt iPhone → Safari → Micro, chọn Cho phép.\n(" + e.message + ")"; }
+};
+$("btnStop").onclick = () => mr && mr.state !== "inactive" && mr.stop();
+function offerSave(blob){ // cho phép lưu file ghi âm về máy để phòng trường hợp xử lý lỗi
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = S.audioName;
+  a.textContent = "Lưu file ghi âm về máy (dự phòng)"; a.style.display="block"; a.style.marginTop="6px";
+  $("fileInfo").appendChild(a); }
+
+/* ---------- Gửi AssemblyAI ---------- */
+function step(s, state){ document.querySelectorAll("#steps li").forEach(li => { if (li.dataset.s===s){ li.className = state; } }); }
+async function aai(path, opts={}){ const r = await fetch(AAI+path, {...opts, headers:{authorization:S.apiKey, ...(opts.headers||{})}});
+  const txt = await r.text(); let j; try{ j = JSON.parse(txt); }catch(e){ j = {error:txt}; }
+  if (!r.ok) throw new Error((j && j.error) || ("Lỗi " + r.status)); return j; }
+$("btnProcess").onclick = async () => {
+  if (!S.audio) return;
+  const meta = { title:$("mTitle").value.trim() || "Cuộc họp " + fmtDate($("mDate").value), date:$("mDate").value,
+    people:$("mPeople").value.trim(), speakers: parseInt($("mSpeakers").value) || null };
+  S.busy = true; show("scrWork"); $("workErr").textContent=""; $("btnWorkBack").hidden = true;
+  document.querySelectorAll("#steps li").forEach(li=>li.className="");
+  try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
+  try{
+    step("up","on");
+    const up = await aai("/v2/upload", {method:"POST", headers:{"content-type":"application/octet-stream"}, body:S.audio});
+    step("up","done"); step("tr","on");
+    const body = { audio_url: up.upload_url, speech_models:["universal-3-5-pro","universal-2"], language_code:"vi", speaker_labels:true };
+    if (meta.speakers) body.speakers_expected = meta.speakers;
+    if (meta.people) body.keyterms_prompt = meta.people.split(/[,;]/).map(s=>s.trim()).filter(Boolean).slice(0,50);
+    let job;
+    try { job = await aai("/v2/transcript", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body)}); }
+    catch(e){ delete body.keyterms_prompt; job = await aai("/v2/transcript", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body)}); }
+    const started = Date.now();
+    while (true){
+      await new Promise(r=>setTimeout(r,5000));
+      job = await aai("/v2/transcript/" + job.id);
+      $("workNote").textContent = `Đang xử lý… ${hms((Date.now()-started)/1000)} (trạng thái: ${job.status})`;
+      if (job.status === "completed") break;
+      if (job.status === "error") throw new Error(job.error || "Dịch vụ báo lỗi khi chuyển giọng nói.");
+    }
+    step("tr","done"); step("save","on");
+    const utts = (job.utterances||[]).map(u => ({s:u.speaker, t:u.text, a:u.start, b:u.end}));
+    if (!utts.length && job.text) utts.push({s:"A", t:job.text, a:0, b:(job.audio_duration||0)*1000});
+    const spk = [...new Set(utts.map(u=>u.s))].sort();
+    const m = { id: crypto.randomUUID(), created: Date.now(), ...meta, utts, names: Object.fromEntries(spk.map(s=>[s,""])),
+      durationText: job.audio_duration ? hms(job.audio_duration) : "", model: job.speech_model_used || job.speech_model || "", minutes:null };
+    await saveMeeting(m); step("save","done");
+    aai("/v2/transcript/" + job.id, {method:"DELETE"}).catch(()=>{}); // xoá bản chép lời trên máy chủ AssemblyAI
+    S.busy=false; try{ wake && wake.release(); }catch(e){}
+    openMeeting(m); toast("Đã chuyển xong. Hãy đặt tên người nói.");
+  }catch(e){ S.busy=false; $("workErr").textContent = "Có lỗi: " + e.message + "\nFile ghi âm vẫn còn trên máy, bạn có thể thử lại."; $("btnWorkBack").hidden=false; }
+};
+$("btnWorkBack").onclick = () => show("scrNew");
+
+/* ---------- Xem cuộc họp ---------- */
+const who = (m, s) => m.names[s] || ("Người " + s);
+function openMeeting(m){ S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent="";
+  $("vTitle").textContent = m.title; $("vMeta").textContent = [fmtDate(m.date), m.durationText, Object.keys(m.names).length + " người nói"].filter(Boolean).join(" · ");
+  $("vState").textContent = m.minutes ? "Có biên bản" : "Chưa có biên bản"; $("vState").className = "pill " + (m.minutes?"ok":"warn");
+  const box = $("spkBox"); box.innerHTML="";
+  for (const s of Object.keys(m.names)){ const first = m.utts.find(u=>u.s===s);
+    const tag = document.createElement("span"); tag.className="tag"; tag.textContent = "Người " + s;
+    const wrap = document.createElement("div"); wrap.style.display="grid"; wrap.style.gap="2px"; wrap.style.minWidth="0";
+    const inp = document.createElement("input"); inp.id = "name_" + s; inp.value = m.names[s]; inp.placeholder = "Tên thật";
+    const hint = document.createElement("span"); hint.className="muted"; hint.style.fontSize="12.5px";
+    hint.textContent = first ? "“" + first.t.slice(0,90) + (first.t.length>90?"…":"") + "”" : "";
+    wrap.append(inp, hint); box.append(tag, wrap); }
+  renderTranscript(m); renderMinutes(m); show("scrMeet"); }
+function renderTranscript(m){ const v = $("tView"); v.innerHTML="";
+  for (const u of m.utts){ const d = document.createElement("div"); d.className="utt";
+    const h = document.createElement("div"); h.className="who"; h.textContent = who(m,u.s);
+    const t = document.createElement("span"); t.className="t"; t.textContent = hms(u.a/1000); h.appendChild(t);
+    const p = document.createElement("p"); p.textContent = u.t; d.append(h,p); v.appendChild(d); } }
+$("btnSaveNames").onclick = async () => { const m = S.cur;
+  for (const s of Object.keys(m.names)) m.names[s] = $("name_"+s).value.trim();
+  await saveMeeting(m); renderTranscript(m); toast("Đã lưu tên người nói"); };
+$("btnDel").onclick = async () => { if ($("delConfirm").hidden){ $("delConfirm").hidden=false; return; }
+  await delMeeting(S.cur.id); toast("Đã xoá"); openHome(); };
+
+/* ---------- Biên bản ---------- */
+function transcriptText(m){ return m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`).join("\n"); }
+const INSTR = `Bạn là thư ký cuộc họp chuyên nghiệp. Dưới đây là lời thoại cuộc họp do máy chép từ ghi âm (tiếng Việt, xen lẫn tiếng Anh), đã chia theo người nói.
+Lưu ý: bản chép có thể sai chính tả, nghe nhầm thuật ngữ tiếng Anh, hoặc gán nhầm người nói ở vài câu. Hãy suy luận theo ngữ cảnh để hiểu đúng ý. Không bịa thông tin không có trong cuộc họp. Chi tiết không chắc chắn (tên, con số, hạn chót) ghi "[cần xác nhận]".
+Viết bằng tiếng Việt có dấu, giữ thuật ngữ tiếng Anh chuyên môn khi cần.`;
+const SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (không kèm giải thích, không markdown) theo cấu trúc:
+{"chu_de":"","muc_dich":"","thanh_phan":["tên"],"tom_tat":"3-5 câu",
+"diem_chinh":[{"chu_de":"","noi_dung":"","ket_luan":""}],
+"quyet_dinh":["..."],
+"viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
+"ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],
+"can_xac_nhan":["các điểm cần kiểm tra lại"]}`;
+$("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinutes"); $("minErr").textContent="";
+  btn.disabled = true; btn.textContent = "Đang viết biên bản…"; S.busy = true;
+  try{
+    const user = `${INSTR}\n\nThông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.\n\n${SCHEMA}\n\nLỜI THOẠI:\n${transcriptText(m)}`;
+    const r = await fetch(LLM, {method:"POST", headers:{authorization:S.apiKey, "content-type":"application/json"},
+      body: JSON.stringify({model:S.model, max_tokens:8000, messages:[{role:"user", content:user}]})});
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error((j.error && (j.error.message||j.error)) || ("Lỗi " + r.status));
+    let txt = j.choices?.[0]?.message?.content || ""; if (Array.isArray(txt)) txt = txt.map(c=>c.text||"").join("");
+    const s = txt.indexOf("{"), e = txt.lastIndexOf("}"); const obj = JSON.parse(txt.slice(s, e+1));
+    m.minutes = obj; await saveMeeting(m); openMeeting(m); toast("Đã tạo biên bản");
+  }catch(e){ $("minErr").textContent = "Chưa tạo được biên bản tự động: " + e.message + "\nCách thay thế: bấm “Sao chép lời thoại để dán vào Claude”."; }
+  finally{ S.busy=false; btn.disabled=false; btn.textContent = S.cur.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động"; } };
+function renderMinutes(m){ const v = $("minutesView"); v.innerHTML=""; $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản tự động";
+  if (!m.minutes){ v.innerHTML = `<p class="muted">Chưa có biên bản. Đặt tên người nói trước để biên bản ghi đúng tên, rồi bấm "Tạo biên bản tự động".</p>`; return; }
+  const x = m.minutes, el = (tag, txt, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; e.textContent = txt; return e; };
+  const sec = (title, node) => { const d = document.createElement("div"); d.className="sec"; d.append(el("h3", title), node); v.appendChild(d); };
+  sec("Tóm tắt", el("p", x.tom_tat||""));
+  const ul = arr => { const u = document.createElement("ul"); (arr||[]).forEach(s => u.appendChild(el("li", s))); return u; };
+  const table = (heads, rows) => { const w = document.createElement("div"); w.className="tbl"; const t = document.createElement("table");
+    const tr = document.createElement("tr"); heads.forEach(h => tr.appendChild(el("th", h))); t.appendChild(tr);
+    rows.forEach(r => { const tr = document.createElement("tr"); r.forEach(c => tr.appendChild(el("td", c||""))); t.appendChild(tr); }); w.appendChild(t); return w; };
+  sec("Điểm chính", table(["Chủ đề","Nội dung","Kết luận"], (x.diem_chinh||[]).map(d=>[d.chu_de,d.noi_dung,d.ket_luan])));
+  if ((x.quyet_dinh||[]).length) sec("Quyết định", ul(x.quyet_dinh));
+  sec("Việc cần theo dõi", table(["Việc","Ai","Hạn","Ưu tiên"], (x.viec_theo_doi||[]).map(d=>[d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien])));
+  sec("Kế hoạch tiếp theo", ul((x.ke_hoach||[]).map(k => k.noi_dung + (k.thoi_gian ? " — " + k.thoi_gian : ""))));
+  if ((x.can_xac_nhan||[]).length) sec("Cần xác nhận lại", ul(x.can_xac_nhan)); }
+$("btnCopy").onclick = async () => { const m = S.cur;
+  const txt = `Chủ đề: ${m.title}\nNgày: ${fmtDate(m.date)}\nNgười tham dự: ${m.people||""}\n\nLỜI THOẠI (đã chia theo người nói):\n${transcriptText(m)}`;
+  try{ await navigator.clipboard.writeText(txt); toast("Đã sao chép. Mở Dự án Biên bản họp trong Claude và dán vào."); }
+  catch(e){ $("minErr").textContent = "Điện thoại chưa cho sao chép tự động: " + e.message; } };
+
+/* ---------- Xuất Excel ---------- */
+$("btnExcel").onclick = () => { const m = S.cur, x = m.minutes || {};
+  if (!window.XLSX) return $("minErr").textContent = "Chưa tải được thư viện Excel. Kiểm tra mạng rồi mở lại app.";
+  const wb = XLSX.utils.book_new();
+  const add = (name, rows, cols) => { const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = cols.map(w=>({wch:w})); XLSX.utils.book_append_sheet(wb, ws, name); };
+  const r1 = [["BIÊN BẢN CUỘC HỌP"],[],["Chủ đề", m.title],["Ngày họp", fmtDate(m.date)],["Thời lượng", m.durationText],
+    ["Thành phần", (x.thanh_phan||[]).join(", ") || m.people || Object.keys(m.names).map(s=>who(m,s)).join(", ")],["Mục đích", x.muc_dich||""],
+    [],["TÓM TẮT"],[x.tom_tat || "(Chưa tạo biên bản tự động)"],[],["CÁC ĐIỂM CHÍNH"],["STT","Chủ đề","Nội dung chính","Ý kiến/kết luận"],
+    ...(x.diem_chinh||[]).map((d,i)=>[i+1,d.chu_de,d.noi_dung,d.ket_luan]),[],["QUYẾT ĐỊNH"],["STT","Quyết định"],
+    ...(x.quyet_dinh||[]).map((d,i)=>[i+1,d]),[],["CẦN XÁC NHẬN LẠI"],...(x.can_xac_nhan||[]).map(d=>["•",d])];
+  add("Biên bản", r1, [16,30,50,35]);
+  add("Việc cần theo dõi", [["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
+    ...(x.viec_theo_doi||[]).map((d,i)=>[i+1,d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien,"Chưa làm",d.ghi_chu])], [5,45,20,16,12,12,30]);
+  add("Kế hoạch tiếp theo", [["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
+    ...(x.ke_hoach||[]).map((d,i)=>[i+1,d.noi_dung,d.thoi_gian,d.ghi_chu])], [5,50,20,30]);
+  add("Lời thoại", [["Thời điểm","Người nói","Nội dung"], ...m.utts.map(u=>[hms(u.a/1000), who(m,u.s), u.t])], [10,18,90]);
+  const slug = (m.title||"cuoc-hop").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
+  XLSX.writeFile(wb, `BienBan_${m.date||"ngay"}_${slug}.xlsx`); };
+
+/* ---------- Khởi động ---------- */
+if (!window.crypto || !crypto.subtle) document.body.innerHTML = "<p style='padding:20px'>Trình duyệt này không hỗ trợ mã hoá. Hãy mở bằng Safari trên iPhone (iOS 15 trở lên).</p>";
+else initLock();
+</script>
+</body>
+</html>
