@@ -397,6 +397,7 @@ details[open].card summary::after{content:"－"}
 <div class="bottombar" id="barMeet" hidden>
   <button id="btnExcel"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Tải Excel</button>
   <button class="primary" id="btnMinutes">Tạo biên bản</button>
+  <button class="primary" id="btnApply" hidden>Cập nhật biên bản</button>
 </div>
 <div class="toast" id="toast" hidden></div>
 
@@ -561,7 +562,7 @@ function renderList(){ const list = $("meetList"); list.innerHTML = ""; const q 
     const open = ((m.minutes?.viec_theo_doi)||[]).filter(t=>!t.xong).length; if (open) meta.append(withIcon("span","", "flag", open + " việc"));
     mid.append(meta);
     const st = el("span","status" + (m.minutes ? " ok" : "")); st.title = m.minutes ? "Đã có biên bản" : "Chưa có biên bản";
-    b.append(db_, mid, st); b.onclick = () => openMeeting(m); group.appendChild(b); } }
+    b.append(db_, mid, st); b.onclick = () => openMeeting(m, "min"); group.appendChild(b); } }
 $("q").addEventListener("input", renderList);
 
 /* ---------- Cuộc họp mới: ghi âm / chọn file ---------- */
@@ -674,6 +675,8 @@ function openMeeting(m, tab, keepScroll){ if (tab) S.tab = tab; const y = window
     c.append(avatar(m, s), right); box.appendChild(c); }
   renderTranscript(m); renderMinutes(m); renderTasks(m);
   $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản";
+  const waiting = m.minutes ? confirmItems(m).filter(q => q.ok && !q.applied).length : 0;
+  $("btnApply").hidden = !waiting; $("btnMinutes").hidden = !!waiting; $("btnApply").textContent = `Cập nhật biên bản (${waiting})`;
   setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; if (keepScroll) window.scrollTo(0, y); }
 function renderTranscript(m){ const v = $("tView"); v.innerHTML="";
   for (const u of m.utts){ const d = el("div","utt"); d.dataset.ms = u.a; const bub = el("div","bubble");
@@ -782,9 +785,11 @@ function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
   if ((x.quyet_dinh||[]).length){ const ul = el("ul","list-ic"); x.quyet_dinh.forEach(q => { const li = el("li"); li.innerHTML = ICON.star; li.append(el("span","",q)); ul.appendChild(li); }); card("Quyết định", ul); }
   if ((x.ke_hoach||[]).length){ const ul = el("ul","timeline"); x.ke_hoach.forEach(k => { const li = el("li"); li.append(el("span","",k.noi_dung||"")); if (k.thoi_gian) li.append(el("small","",k.thoi_gian)); ul.appendChild(li); }); card("Kế hoạch tiếp theo", ul); }
   const cx = confirmItems(m); if (cx.length){ const c = card("Cần xác nhận lại"); c.id = "confirmCard"; c.classList.add(cx.some(q=>!q.ok) ? "warnc" : "okc");
-    c.append(el("p","muted","AI chưa chắc chắn các điểm dưới đây (tên, con số, hạn chót nghe chưa rõ). Xem lại đoạn hội thoại, rồi bấm Đúng rồi, hoặc gõ thông tin đúng và bấm Lưu."));
+    c.append(el("p","muted","AI chưa chắc chắn các điểm dưới đây (tên, con số, hạn chót nghe chưa rõ). Xem lại đoạn hội thoại, rồi bấm Đúng rồi, hoặc gõ thông tin đúng và bấm Lưu. Xác nhận xong hết thì bấm Cập nhật biên bản để sửa nội dung biên bản một lần."));
     cx.forEach(q => c.append(confirmRow(m, q)));
-    if (cx.some(q => q.ok && !q.applied)){ const b = el("button","primary","Cập nhật biên bản"); b.onclick = () => applyConfirmations(m); c.append(b); } }
+    const pend = cx.filter(q => q.ok && !q.applied).length;
+    if (pend){ const b = el("button","primary",`Cập nhật biên bản (${pend} xác nhận)`); b.onclick = () => applyConfirmations(m);
+      c.append(el("p","muted",`${pend} xác nhận đã lưu nhưng chưa đưa vào biên bản. Bấm nút dưới khi bạn đã xác nhận xong.`), b); } }
   if ((m.lich_su||[]).length){ const h = el("details","card"); h.append(el("summary","", `Lịch sử chỉnh sửa (${m.lich_su.length})`));
     m.lich_su.slice().reverse().forEach(e => { const d = el("div"); d.append(el("p","muted", e.luc)); const ul = el("ul","list-ic"); e.thay_doi.forEach(t => { const li = el("li"); li.innerHTML = ICON.check; li.append(el("span","",t)); ul.append(li); }); d.append(ul); h.append(d); });
     v.appendChild(h); } }
@@ -796,16 +801,18 @@ function confirmRow(m, q){ const r = el("div","cx" + (q.ok ? " ok" : ""));
   if (q.ok){ const done = withIcon("span","concl","check", (q.sua ? "Đã sửa: " + q.sua : "Đã xác nhận đúng") + (q.applied ? " · đã cập nhật vào biên bản" : " · chưa cập nhật vào biên bản")); const redo = el("button","ghost","Sửa lại");
     redo.onclick = async () => { q.ok = false; q.applied = false; await saveMeeting(m); openMeeting(m, "min", true); };
     const row = el("div","cxbtns"); row.append(done, redo); if (ms != null){ const j = withIcon("button","ghost","clock", hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); } r.append(row); return r; }
-  const inp = el("input"); inp.placeholder = "Thông tin đúng (nếu cần sửa)";
+  const inp = el("input"); inp.placeholder = "Thông tin đúng (nếu cần sửa)"; inp.value = q.nhap || "";
   const row = el("div","cxbtns");
   if (ms != null){ const j = withIcon("button","","clock", "Xem lời thoại " + hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); }
-  const ok = el("button","primary", "Đúng rồi"); inp.oninput = () => ok.textContent = inp.value.trim() ? "Lưu" : "Đúng rồi";
-  ok.onclick = async () => { q.ok = true; q.applied = false; q.sua = inp.value.trim(); await saveMeeting(m); await applyConfirmations(m); };
+  const ok = el("button","primary", inp.value.trim() ? "Lưu" : "Đúng rồi");
+  inp.oninput = () => { ok.textContent = inp.value.trim() ? "Lưu" : "Đúng rồi"; q.nhap = inp.value; clearTimeout(inp._t); inp._t = setTimeout(() => saveMeeting(m), 600); };
+  ok.onclick = async () => { clearTimeout(inp._t); q.ok = true; q.applied = false; q.sua = inp.value.trim(); delete q.nhap; await saveMeeting(m);
+    toast("Đã lưu. Khi xác nhận xong, bấm “Cập nhật biên bản”."); openMeeting(m, "min", true); };
   row.append(ok); r.append(inp, row); return r; }
 // Đưa các xác nhận của người dùng vào nội dung biên bản (sửa ở mọi chỗ liên quan)
 async function applyConfirmations(m){ const items = confirmItems(m).filter(q => q.ok && !q.applied); if (!items.length) return openMeeting(m, "min", true);
   if (S.busy) return toast("Đang xử lý, chờ chút nhé"); S.busy = true; $("minErr").textContent = ""; setTab("min"); window.scrollTo(0,0);
-  ["btnMinutes","btnExcel"].forEach(b => $(b).disabled = true);
+  ["btnMinutes","btnExcel","btnApply"].forEach(b => $(b).disabled = true);
   try{
     const bb = JSON.parse(JSON.stringify(m.minutes)); delete bb.can_xac_nhan;
     const xn = items.map(q => q.sua ? {diem_can_xac_nhan:q.noi_dung, thong_tin_dung:q.sua} : {diem_can_xac_nhan:q.noi_dung, ket_qua:"Người dự họp xác nhận nội dung hiện tại là ĐÚNG"});
@@ -831,7 +838,7 @@ ${JSON.stringify(xn)}`, 6000, "Đang cập nhật biên bản theo xác nhận c
     m.lastChanges = m.lich_su[m.lich_su.length-1];
     await saveMeeting(m); minStatus(""); toast("Biên bản đã được cập nhật");
   }catch(e){ minStatus(""); $("minErr").textContent = "Đã lưu xác nhận nhưng chưa cập nhật được vào biên bản: " + e.message + "\nBấm “Cập nhật biên bản” trong phần Cần xác nhận lại để thử lại."; }
-  finally{ S.busy = false; ["btnMinutes","btnExcel"].forEach(b => $(b).disabled = false); const err = $("minErr").textContent; openMeeting(m, "min"); $("minErr").textContent = err; } }
+  finally{ S.busy = false; ["btnMinutes","btnExcel","btnApply"].forEach(b => $(b).disabled = false); const err = $("minErr").textContent; openMeeting(m, "min"); $("minErr").textContent = err; } }
 function jumpTo(ms){ setTab("tr"); const items = [...document.querySelectorAll("#tView .utt")]; if (!items.length) return;
   let best = items[0]; for (const it of items){ if (+it.dataset.ms <= ms + 1500) best = it; else break; }
   best.scrollIntoView({block:"center"}); best.classList.remove("hl"); best.offsetWidth; best.classList.add("hl"); }
@@ -863,6 +870,7 @@ function renderTasks(m){ const v = $("tab_task"); v.innerHTML = ""; const tasks 
       body.append(chips); if (t.ghi_chu) body.append(el("p","muted", t.ghi_chu));
     }
     b.append(ck, body); v.appendChild(b); }); }
+$("btnApply").onclick = () => applyConfirmations(S.cur);
 $("btnCopy").onclick = async () => { const m = S.cur;
   const txt = `Chủ đề: ${m.title}\nNgày: ${fmtDate(m.date)}\nNgười tham dự: ${m.people||""}\n\nLỜI THOẠI (đã chia theo người nói):\n${transcriptText(m)}`;
   try{ await navigator.clipboard.writeText(txt); toast("Đã sao chép. Mở Dự án Biên bản họp trong Claude và dán vào."); }
