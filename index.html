@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Biên Bản Họp</title>
+<script>try{var th=localStorage.getItem("bb_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th);}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap">
 <script src="xlsx.full.min.js"></script>
@@ -29,7 +30,7 @@
   --mono:ui-monospace,"SF Mono",Menlo,monospace;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#1c1418; --card:#2a1e24; --fg:#fbecf2; --muted:#c3a5b3; --line:#3e2d36;
   --soft:#3a2630; --soft2:#31222a; --accent:#f3a6c1; --btn:#f3a6c1; --btn-fg:#2b1520; --link:#f5b3cb;
   --rec:#ff7f9c; --ok:#6fd3a7; --ok-soft:#1f3a2f; --warn:#f0c070; --warn-soft:#3d301c;
@@ -38,6 +39,15 @@
   --s4:#4a3020; --s4t:#ffc79c; --s5:#1f3449; --s5t:#a9d3f7; --s6:#433a17; --s6t:#f1df8d;
   color-scheme:dark;
 }}
+:root[data-theme="dark"]{
+  --bg:#1c1418; --card:#2a1e24; --fg:#fbecf2; --muted:#c3a5b3; --line:#3e2d36;
+  --soft:#3a2630; --soft2:#31222a; --accent:#f3a6c1; --btn:#f3a6c1; --btn-fg:#2b1520; --link:#f5b3cb;
+  --rec:#ff7f9c; --ok:#6fd3a7; --ok-soft:#1f3a2f; --warn:#f0c070; --warn-soft:#3d301c;
+  --shadow:0 6px 24px rgba(0,0,0,.35); --shadow-sm:0 2px 10px rgba(0,0,0,.25);
+  --s1:#4a2635; --s1t:#ffb8cf; --s2:#352c55; --s2t:#cbbcff; --s3:#1f4034; --s3t:#9be3c2;
+  --s4:#4a3020; --s4t:#ffc79c; --s5:#1f3449; --s5t:#a9d3f7; --s6:#433a17; --s6t:#f1df8d;
+  color-scheme:dark;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font:15.5px/1.55 var(--font);
@@ -168,9 +178,13 @@ details[open].card summary::after{content:"－"}
 .chip.ok{background:var(--ok-soft);color:var(--ok);box-shadow:none}
 .chip.warn{background:var(--warn-soft);color:var(--warn);box-shadow:none}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);background:var(--soft);border-radius:14px;padding:4px;gap:2px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:4}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);background:var(--soft);border-radius:14px;padding:4px;gap:2px}
+.seg3 button{padding:10px 4px;border-radius:11px;background:transparent;font-size:13.5px;color:var(--muted)}
+.seg3 button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow-sm)}
 .seg button{padding:9px 2px;border-radius:11px;background:transparent;font-size:13px;color:var(--muted);box-shadow:none;position:relative}
 .seg button.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow-sm)}
-.seg .count{font-size:11px;background:var(--btn);color:var(--btn-fg);border-radius:99px;padding:0 6px;margin-left:2px}
+.seg button{white-space:nowrap}
+.seg .count{position:absolute;top:1px;right:3px;font-size:10.5px;line-height:16px;min-width:16px;height:16px;background:var(--btn);color:var(--btn-fg);border-radius:99px;padding:0 4px}
 .progress{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:16px;padding:14px;font-size:14px;font-weight:500}
 .progress .spinner{width:22px;height:22px;border-width:3px;flex:none}
 .sum{font-size:15.5px;line-height:1.65}
@@ -186,18 +200,30 @@ details[open].card summary::after{content:"－"}
 .timeline li{position:relative;padding-left:16px}
 .timeline li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--accent)}
 .timeline small{display:block;color:var(--muted)}
+.cx{display:grid;gap:8px;padding:12px 0;border-top:1px solid rgba(185,118,24,.25)}
+.cx .cxq{font-weight:500}
+.cxbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cxbtns button{padding:9px 14px;font-size:14px}
+.cx input{background:var(--card)}
+.card.okc{background:var(--ok-soft);box-shadow:none}
+.card.okc .cx{border-top-color:rgba(47,154,114,.25)}
+.utt.hl .bubble{outline:2.5px solid var(--accent);animation:hlp 1.6s ease-out}
+@keyframes hlp{from{background:var(--soft)}}
 .card.warnc{background:var(--warn-soft);box-shadow:none}
 .card.warnc h2{color:var(--warn)}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--card);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);text-align:left;width:100%;font-weight:400;color:var(--fg)}
-.check{width:26px;height:26px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;margin-top:1px;color:transparent}
+.check{width:28px;height:28px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;margin-top:1px;color:transparent;padding:0;background:transparent;box-shadow:none}
 .task.done .check{background:var(--ok);border-color:var(--ok);color:#fff}
 .task.done .tt{text-decoration:line-through;color:var(--muted)}
 .check svg{width:15px;height:15px;stroke-width:3}
 .task .tt{font-weight:600;display:block}
 .task .chips{margin-top:8px}
 .task .chip{box-shadow:none;background:var(--soft2)}
+.task .chip.warn{background:var(--warn-soft);color:var(--warn)}
+.task>div{min-width:0}
 .chip.hi{background:#fde0e6;color:#b4314f} .chip.mid{background:var(--warn-soft);color:var(--warn)} .chip.lo{background:var(--ok-soft);color:var(--ok)}
-@media (prefers-color-scheme:dark){.chip.hi{background:#4a2330;color:#ff9fb5}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.hi{background:#4a2330;color:#ff9fb5}}
+:root[data-theme="dark"] .chip.hi{background:#4a2330;color:#ff9fb5}
 .utt{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
 .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:700 14px var(--display)}
 .bubble{background:var(--card);border-radius:4px 18px 18px 18px;padding:10px 14px;box-shadow:var(--shadow-sm);min-width:0}
@@ -253,6 +279,12 @@ details[open].card summary::after{content:"－"}
       </label>
       <button class="primary" id="btnSaveKey">Lưu</button>
       <p class="muted" id="keyStatus"></p>
+    </div>
+    <p class="sec-label">Giao diện</p>
+    <div class="card">
+      <div class="seg3" id="themeSeg" role="radiogroup" aria-label="Chế độ hiển thị">
+        <button data-theme="auto">Theo điện thoại</button><button data-theme="light">Sáng</button><button data-theme="dark">Tối</button>
+      </div>
     </div>
     <p class="sec-label">Bảo mật</p>
     <div class="card">
@@ -420,7 +452,7 @@ function db(){ return dbp ||= new Promise((res,rej)=>{ const r = indexedDB.open(
   r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function tx(mode, fn){ const d = await db(); return new Promise((res,rej)=>{ const t = d.transaction("meetings", mode);
   const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); }
-async function saveMeeting(m){ const box = await enc(m); await tx("readwrite", st => st.put({id:m.id, ...box})); }
+async function saveMeeting(m){ const box = await enc(JSON.parse(JSON.stringify(m, (k,v) => k === "_edit" ? undefined : v))); await tx("readwrite", st => st.put({id:m.id, ...box})); }
 async function loadMeetings(){ const rows = await tx("readonly", st => st.getAll()); const out=[];
   for (const r of rows||[]) { try{ out.push(await dec(r)); }catch(e){} } return out.sort((a,b)=>(b.date||"").localeCompare(a.date||"") || b.created-a.created); }
 async function delMeeting(id){ await tx("readwrite", st => st.delete(id)); }
@@ -493,6 +525,16 @@ $("btnWipe").onclick = async () => {
   try{ localStorage.clear(); }catch(e){} const d = await db(); d.close(); dbp=null; indexedDB.deleteDatabase("bienban");
   S.key=null; S.apiKey=""; toast("Đã xoá toàn bộ dữ liệu"); initLock();
 };
+
+/* ---------- Chế độ sáng / tối ---------- */
+function applyTheme(t){ const r = document.documentElement; if (t === "light" || t === "dark") r.setAttribute("data-theme", t); else r.removeAttribute("data-theme");
+  const dark = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.querySelectorAll('meta[name="theme-color"]').forEach(x => x.setAttribute("content", dark ? "#1c1418" : "#fff4f7"));
+  document.querySelectorAll("#themeSeg button").forEach(b => b.classList.toggle("on", b.dataset.theme === (t || "auto"))); }
+document.querySelectorAll("#themeSeg button").forEach(b => b.onclick = () => { const t = b.dataset.theme; lsSet("bb_theme", t); applyTheme(t);
+  toast(t === "auto" ? "Theo chế độ của điện thoại" : t === "dark" ? "Đã chuyển sang giao diện tối" : "Đã chuyển sang giao diện sáng"); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyTheme(lsGet("bb_theme") || "auto"));
+applyTheme(lsGet("bb_theme") || "auto");
 
 /* ---------- Danh sách ---------- */
 const fmtDate = d => d ? d.split("-").reverse().join("/") : "";
@@ -611,13 +653,16 @@ function avatar(m, s, cls){ const i = spkIndex(m, s), a = el("div", "av" + (cls 
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 function setTab(t){ S.tab = t; document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
   ["min","task","tr","spk"].forEach(x => $("tab_"+x).hidden = x !== t); }
-function openMeeting(m){ S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent=""; $("minProg").hidden = true;
+function openMeeting(m, tab, keepScroll){ if (tab) S.tab = tab; const y = window.scrollY; S.cur = m; $("delConfirm").hidden = true; $("minErr").textContent=""; $("minProg").hidden = true;
   $("vTitle").textContent = m.title;
   const ch = $("vChips"); ch.innerHTML = "";
   if (m.date) ch.append(withIcon("span","chip","cal", fmtDate(m.date)));
   if (m.durationText) ch.append(withIcon("span","chip","clock", shortDur(m.durationText)));
   ch.append(withIcon("span","chip","people", Object.keys(m.names).length + " người nói"));
   ch.append(m.minutes ? withIcon("span","chip ok","check","Đã có biên bản") : el("span","chip warn","Chưa có biên bản"));
+  const pend = m.minutes ? confirmItems(m).filter(q=>!q.ok).length : 0;
+  if (pend){ const c = el("button","chip warn", pend + " điểm cần xác nhận"); c.onclick = () => { setTab("min"); $("confirmCard")?.scrollIntoView({block:"start"}); }; ch.append(c); }
+  document.querySelector('.seg [data-tab="min"]').innerHTML = "Biên bản" + (pend ? ` <span class="count">${pend}</span>` : "");
   const tasks = (m.minutes?.viec_theo_doi)||[]; const open = tasks.filter(t=>!t.xong).length;
   document.querySelector('.seg [data-tab="task"]').innerHTML = "Đầu việc" + (open ? ` <span class="count">${open}</span>` : "");
   const box = $("spkBox"); box.innerHTML="";
@@ -629,9 +674,9 @@ function openMeeting(m){ S.cur = m; $("delConfirm").hidden = true; $("minErr").t
     c.append(avatar(m, s), right); box.appendChild(c); }
   renderTranscript(m); renderMinutes(m); renderTasks(m);
   $("btnMinutes").textContent = m.minutes ? "Tạo lại biên bản" : "Tạo biên bản";
-  setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; }
+  setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; if (keepScroll) window.scrollTo(0, y); }
 function renderTranscript(m){ const v = $("tView"); v.innerHTML="";
-  for (const u of m.utts){ const d = el("div","utt"); const bub = el("div","bubble");
+  for (const u of m.utts){ const d = el("div","utt"); d.dataset.ms = u.a; const bub = el("div","bubble");
     const h = el("div","h", who(m,u.s)); h.style.color = `var(--s${spkIndex(m,u.s)}t)`; h.append(el("span","", hms(u.a/1000)));
     bub.append(h, el("p","", u.t)); d.append(avatar(m, u.s), bub); v.appendChild(d); } }
 $("btnSaveNames").onclick = async () => { const m = S.cur;
@@ -651,7 +696,7 @@ const SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (kh�
 "quyet_dinh":["..."],
 "viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
 "ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],
-"can_xac_nhan":["các điểm cần kiểm tra lại"]}`;
+"can_xac_nhan":[{"noi_dung":"điều chưa chắc chắn, nêu rõ cần kiểm tra gì","thoi_diem":"hh:mm:ss trong lời thoại nơi nhắc đến"}]}`;
 function minStatus(t){ $("minProg").hidden = !t; $("minProgText").textContent = t || ""; }
 async function callLLM(content, maxTokens, label){ let r, raw = "", j = {};
   for (let attempt = 1; attempt <= 6; attempt++){
@@ -694,7 +739,7 @@ function splitLines(lines0, maxChars){ const parts=[]; let cur=[], n=0; const li
 const NOTE_SCHEMA = `Trả về DUY NHẤT một đối tượng JSON hợp lệ (không giải thích, không markdown):
 {"thanh_phan":["tên người nói/được nhắc"],"diem_chinh":[{"chu_de":"","noi_dung":"","ket_luan":""}],"quyet_dinh":["..."],
 "viec_theo_doi":[{"cong_viec":"","nguoi_phu_trach":"","han":"","uu_tien":"Cao|Trung bình|Thấp","ghi_chu":""}],
-"ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],"can_xac_nhan":["..."]}
+"ke_hoach":[{"noi_dung":"","thoi_gian":"","ghi_chu":""}],"can_xac_nhan":[{"noi_dung":"","thoi_diem":"hh:mm:ss"}]}
 Ghi ngắn gọn, đủ ý, không lặp lại. Mỗi mục tối đa 1–2 câu.`;
 const CHUNK_CHARS = 7000;
 $("btnMinutes").onclick = async () => { const m = S.cur; const btn = $("btnMinutes"); $("minErr").textContent="";
@@ -731,21 +776,54 @@ function renderMinutes(m){ const v = $("tab_min"); v.innerHTML="";
     card("Điểm chính", wrap); }
   if ((x.quyet_dinh||[]).length){ const ul = el("ul","list-ic"); x.quyet_dinh.forEach(q => { const li = el("li"); li.innerHTML = ICON.star; li.append(el("span","",q)); ul.appendChild(li); }); card("Quyết định", ul); }
   if ((x.ke_hoach||[]).length){ const ul = el("ul","timeline"); x.ke_hoach.forEach(k => { const li = el("li"); li.append(el("span","",k.noi_dung||"")); if (k.thoi_gian) li.append(el("small","",k.thoi_gian)); ul.appendChild(li); }); card("Kế hoạch tiếp theo", ul); }
-  if ((x.can_xac_nhan||[]).length){ const ul = el("ul","list-ic"); x.can_xac_nhan.forEach(q => ul.appendChild(el("li","",q))); card("Cần xác nhận lại", ul).classList.add("warnc"); } }
+  const cx = confirmItems(m); if (cx.length){ const c = card("Cần xác nhận lại"); c.id = "confirmCard"; c.classList.add(cx.some(q=>!q.ok) ? "warnc" : "okc");
+    c.append(el("p","muted","AI chưa chắc chắn các điểm dưới đây (tên, con số, hạn chót nghe chưa rõ). Xem lại đoạn hội thoại, rồi bấm Đúng rồi, hoặc gõ thông tin đúng và bấm Lưu."));
+    cx.forEach(q => c.append(confirmRow(m, q))); } }
+function confirmItems(m){ const x = m.minutes || {}; x.can_xac_nhan = (x.can_xac_nhan||[]).map(q => typeof q === "string" ? {noi_dung:q} : q); return x.can_xac_nhan; }
+const toMs = t => { const p = String(t||"").match(/(\d+):(\d+)(?::(\d+))?/); if (!p) return null; return (p[3] != null ? (+p[1]*3600 + +p[2]*60 + +p[3]) : (+p[1]*60 + +p[2]))*1000; };
+function confirmRow(m, q){ const r = el("div","cx" + (q.ok ? " ok" : ""));
+  r.append(el("p","cxq", q.noi_dung || ""));
+  const ms = toMs(q.thoi_diem);
+  if (q.ok){ const done = withIcon("span","concl","check", q.sua ? "Đã sửa: " + q.sua : "Đã xác nhận đúng"); const redo = el("button","ghost","Sửa lại");
+    redo.onclick = async () => { q.ok = false; await saveMeeting(m); openMeeting(m, "min", true); };
+    const row = el("div","cxbtns"); row.append(done, redo); if (ms != null){ const j = withIcon("button","ghost","clock", hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); } r.append(row); return r; }
+  const inp = el("input"); inp.placeholder = "Thông tin đúng (nếu cần sửa)";
+  const row = el("div","cxbtns");
+  if (ms != null){ const j = withIcon("button","","clock", "Xem lời thoại " + hms(ms/1000)); j.onclick = () => jumpTo(ms); row.append(j); }
+  const ok = el("button","primary", "Đúng rồi"); inp.oninput = () => ok.textContent = inp.value.trim() ? "Lưu" : "Đúng rồi";
+  ok.onclick = async () => { q.ok = true; q.sua = inp.value.trim(); await saveMeeting(m); toast(q.sua ? "Đã lưu thông tin đúng" : "Đã xác nhận"); openMeeting(m, "min", true); };
+  row.append(ok); r.append(inp, row); return r; }
+function jumpTo(ms){ setTab("tr"); const items = [...document.querySelectorAll("#tView .utt")]; if (!items.length) return;
+  let best = items[0]; for (const it of items){ if (+it.dataset.ms <= ms + 1500) best = it; else break; }
+  best.scrollIntoView({block:"center"}); best.classList.remove("hl"); best.offsetWidth; best.classList.add("hl"); }
 function renderTasks(m){ const v = $("tab_task"); v.innerHTML = ""; const tasks = (m.minutes?.viec_theo_doi)||[];
   if (!tasks.length){ v.appendChild(el("p","muted", m.minutes ? "Cuộc họp này không có việc cần theo dõi." : "Tạo biên bản để xem danh sách việc cần làm.")); return; }
-  v.appendChild(el("p","muted","Chạm vào một việc để đánh dấu đã xong. Trạng thái được ghi vào file Excel."));
-  tasks.forEach((t, i) => { const b = el("button","task" + (t.xong ? " done" : "")); const ck = el("span","check"); ck.innerHTML = ICON.check;
-    const body = el("div"); body.append(el("span","tt", t.cong_viec || ""));
-    const chips = el("div","chips");
-    if (t.nguoi_phu_trach) chips.append(withIcon("span","chip","user", t.nguoi_phu_trach));
-    if (t.han) chips.append(withIcon("span","chip","cal", t.han));
-    if (t.uu_tien){ const u = (t.uu_tien||"").toLowerCase(); chips.append(el("span","chip " + (u.startsWith("cao") ? "hi" : u.startsWith("th") ? "lo" : "mid"), t.uu_tien)); }
-    body.append(chips); if (t.ghi_chu) body.append(el("p","muted", t.ghi_chu));
-    b.append(ck, body);
-    b.onclick = async () => { t.xong = !t.xong; await saveMeeting(m); renderTasks(m);
-      const open = tasks.filter(x=>!x.xong).length; document.querySelector('.seg [data-tab="task"]').innerHTML = "Đầu việc" + (open ? ` <span class="count">${open}</span>` : ""); };
-    v.appendChild(b); }); }
+  v.appendChild(el("p","muted","Chạm vòng tròn để đánh dấu đã xong. Bấm Sửa để chỉnh người làm, hạn chót… Mọi thay đổi được ghi vào file Excel."));
+  const refreshCount = () => { const open = tasks.filter(x=>!x.xong).length; document.querySelector('.seg [data-tab="task"]').innerHTML = "Đầu việc" + (open ? ` <span class="count">${open}</span>` : ""); };
+  const unsure = s => /cần xác nhận/i.test(s||"");
+  tasks.forEach((t, i) => { const b = el("div","task" + (t.xong ? " done" : ""));
+    const ck = el("button","check"); ck.innerHTML = ICON.check; ck.setAttribute("aria-label", t.xong ? "Bỏ đánh dấu xong" : "Đánh dấu đã xong");
+    ck.onclick = async () => { t.xong = !t.xong; await saveMeeting(m); renderTasks(m); refreshCount(); };
+    const body = el("div");
+    if (t._edit){
+      const f = el("div","stack"); f.style.gap = "8px";
+      const mk = (lbl, key, ph) => { const l = el("label","",lbl); const i = el("input"); i.value = unsure(t[key]) ? "" : (t[key]||""); i.placeholder = ph; i.dataset.k = key; l.append(i); return l; };
+      const pr = el("label","","Ưu tiên"); const sel = el("select"); ["Cao","Trung bình","Thấp"].forEach(o => { const op = el("option","",o); if ((t.uu_tien||"").toLowerCase() === o.toLowerCase()) op.selected = true; sel.append(op); }); sel.dataset.k = "uu_tien"; pr.append(sel);
+      f.append(mk("Công việc","cong_viec",""), mk("Người phụ trách","nguoi_phu_trach","Ví dụ: Chị Lan"), mk("Hạn hoàn thành","han","Ví dụ: 20/11/2026"), pr, mk("Ghi chú","ghi_chu",""));
+      const btns = el("div","cxbtns"); const cancel = el("button","","Huỷ"); const save = el("button","primary","Lưu");
+      cancel.onclick = () => { delete t._edit; renderTasks(m); };
+      save.onclick = async () => { f.querySelectorAll("[data-k]").forEach(i => { t[i.dataset.k] = i.value.trim(); }); delete t._edit; await saveMeeting(m); renderTasks(m); toast("Đã lưu đầu việc"); };
+      btns.append(cancel, save); f.append(btns); body.append(f);
+    } else {
+      body.append(el("span","tt", t.cong_viec || ""));
+      const chips = el("div","chips");
+      chips.append(withIcon("span","chip" + (unsure(t.nguoi_phu_trach) || !t.nguoi_phu_trach ? " warn" : ""),"user", t.nguoi_phu_trach || "Chưa rõ ai làm"));
+      chips.append(withIcon("span","chip" + (unsure(t.han) || !t.han ? " warn" : ""),"cal", t.han || "Chưa có hạn"));
+      if (t.uu_tien){ const u = (t.uu_tien||"").toLowerCase(); chips.append(el("span","chip " + (u.startsWith("cao") ? "hi" : u.startsWith("th") ? "lo" : "mid"), t.uu_tien)); }
+      const ed = el("button","ghost","Sửa"); ed.style.padding = "4px 8px"; ed.onclick = () => { t._edit = true; renderTasks(m); }; chips.append(ed);
+      body.append(chips); if (t.ghi_chu) body.append(el("p","muted", t.ghi_chu));
+    }
+    b.append(ck, body); v.appendChild(b); }); }
 $("btnCopy").onclick = async () => { const m = S.cur;
   const txt = `Chủ đề: ${m.title}\nNgày: ${fmtDate(m.date)}\nNgười tham dự: ${m.people||""}\n\nLỜI THOẠI (đã chia theo người nói):\n${transcriptText(m)}`;
   try{ await navigator.clipboard.writeText(txt); toast("Đã sao chép. Mở Dự án Biên bản họp trong Claude và dán vào."); }
@@ -760,8 +838,9 @@ $("btnExcel").onclick = () => { const m = S.cur, x = m.minutes || {};
     ["Thành phần", (x.thanh_phan||[]).join(", ") || m.people || Object.keys(m.names).map(s=>who(m,s)).join(", ")],["Mục đích", x.muc_dich||""],
     [],["TÓM TẮT"],[x.tom_tat || "(Chưa tạo biên bản tự động)"],[],["CÁC ĐIỂM CHÍNH"],["STT","Chủ đề","Nội dung chính","Ý kiến/kết luận"],
     ...(x.diem_chinh||[]).map((d,i)=>[i+1,d.chu_de,d.noi_dung,d.ket_luan]),[],["QUYẾT ĐỊNH"],["STT","Quyết định"],
-    ...(x.quyet_dinh||[]).map((d,i)=>[i+1,d]),[],["CẦN XÁC NHẬN LẠI"],...(x.can_xac_nhan||[]).map(d=>["•",d])];
-  add("Biên bản", r1, [16,30,50,35]);
+    ...(x.quyet_dinh||[]).map((d,i)=>[i+1,d]),[],["CẦN XÁC NHẬN LẠI"],["STT","Điểm cần xác nhận","Thời điểm","Trạng thái","Thông tin đúng"],
+    ...(x.can_xac_nhan||[]).map((d,i)=>{ d = typeof d === "string" ? {noi_dung:d} : d; return [i+1,d.noi_dung,d.thoi_diem||"",d.ok ? "Đã xác nhận" : "Chưa xác nhận",d.sua||""]; })];
+  add("Biên bản", r1, [16,40,50,16,35]);
   add("Việc cần theo dõi", [["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
     ...(x.viec_theo_doi||[]).map((d,i)=>[i+1,d.cong_viec,d.nguoi_phu_trach,d.han,d.uu_tien,d.xong ? "Đã xong" : "Chưa làm",d.ghi_chu])], [5,45,20,16,12,12,30]);
   add("Kế hoạch tiếp theo", [["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
