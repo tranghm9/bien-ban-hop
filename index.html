@@ -2,6 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self' blob:; connect-src 'self' https://api.assemblyai.com https://llm-gateway.assemblyai.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,14 +14,23 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Biên Bản Họp</title>
 <script>try{var th=localStorage.getItem("bb_theme");if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th);}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Quicksand:wght@600;700&display=swap">
 <style>
+/* Phông chữ lưu ngay trong kho mã (thư mục fonts/), không tải từ bên thứ ba. Mỗi phông chia hai phần: chữ có dấu tiếng Việt và chữ Latin cơ bản. */
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/be-vietnam-pro-vietnamese-400-normal.woff2) format("woff2");unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/be-vietnam-pro-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/be-vietnam-pro-vietnamese-500-normal.woff2) format("woff2");unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/be-vietnam-pro-latin-500-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/be-vietnam-pro-vietnamese-600-normal.woff2) format("woff2");unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/be-vietnam-pro-latin-600-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/be-vietnam-pro-vietnamese-700-normal.woff2) format("woff2");unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:"Be Vietnam Pro";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/be-vietnam-pro-latin-700-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Quicksand";font-style:normal;font-weight:300 700;font-display:swap;src:url(fonts/quicksand-vietnamese-wght-normal.woff2) format("woff2");unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB}
+@font-face{font-family:"Quicksand";font-style:normal;font-weight:300 700;font-display:swap;src:url(fonts/quicksand-latin-wght-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 /* Layout: một cột hẹp cho iPhone; thanh tiêu đề trên, nút chính nằm ở đáy màn hình trong tầm ngón cái. */
 :root{
-  --bg:#fff4f7; --card:#ffffff; --fg:#3b2431; --muted:#8c6e7d; --line:#f6dce6;
-  --soft:#fde6ee; --soft2:#fff0f5; --accent:#e7799e; --btn:#d9638c; --btn-fg:#ffffff; --link:#c24f78;
-  --rec:#e14d73; --ok:#2f9a72; --ok-soft:#e3f6ee; --warn:#b97618; --warn-soft:#fdf1df;
+  --bg:#fff4f7; --card:#ffffff; --fg:#3b2431; --muted:#7e6371; --line:#f6dce6;
+  --soft:#fde6ee; --soft2:#fff0f5; --accent:#e3648f; --btn:#d03f71; --btn-fg:#ffffff; --link:#b73f6a;
+  --rec:#d92453; --ok:#267c5c; --ok-soft:#e3f6ee; --warn:#9a6214; --warn-soft:#fdf1df;
   --shadow:0 6px 24px rgba(214,99,140,.12); --shadow-sm:0 2px 10px rgba(214,99,140,.08);
   --s1:#fbd3e0; --s1t:#a8345e; --s2:#e3dafb; --s2t:#5b44a8; --s3:#d4f1e4; --s3t:#2d7a58;
   --s4:#ffe2cc; --s4t:#a5571c; --s5:#d6ebfb; --s5t:#2f6796; --s6:#fbf1c4; --s6t:#86701a;
@@ -73,7 +83,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .sec-label{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 4px -4px}
 label{display:grid;gap:6px;font-size:13.5px;color:var(--muted);font-weight:500}
 input,textarea,select{font:inherit;font-size:16px;color:var(--fg);background:var(--soft2);border:1.5px solid transparent;border-radius:14px;padding:12px 14px;width:100%;transition:border-color .15s}
-input::placeholder{color:var(--muted);opacity:.7}
+input::placeholder{color:var(--muted);opacity:1}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);background:var(--card)}
 button{font:inherit;font-weight:600;border:0;border-radius:16px;padding:14px 18px;cursor:pointer;background:var(--soft);color:var(--fg);display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:transform .1s, opacity .15s}
 button:active{transform:scale(.97)}
@@ -125,6 +135,7 @@ button:disabled{opacity:.45;cursor:default;transform:none}
 .bottombar{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
   background:linear-gradient(to top,var(--bg) 70%,transparent);display:flex;gap:10px;justify-content:center}
 .bottombar>*{flex:1 1 0;max-width:300px}
+#barMeet>*{flex:1 1 auto}   /* nút nào chữ dài hơn thì được rộng hơn, để chữ không bị xuống dòng */
 .fab{border-radius:99px;padding:16px 26px;font-size:16px}
 
 /* Cuộc họp mới */
@@ -240,6 +251,7 @@ details[open].card summary::after{content:"－"}
 .spkcard>div{display:grid;gap:8px;min-width:0}
 .spkcard .q{font-size:13.5px;color:var(--muted);font-style:italic}
 .spkcard .n{font-size:12.5px;color:var(--muted)}
+.updbar{width:100%;margin:8px 0 2px;background:var(--ok-soft);color:var(--ok);font-size:14.5px;padding:11px 14px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:14px;font-size:14px;font-weight:500;max-width:90vw;z-index:20;box-shadow:var(--shadow);animation:pop .2s ease-out}
 @keyframes pop{from{opacity:0;transform:translate(-50%,8px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -247,6 +259,7 @@ details[open].card summary::after{content:"－"}
 </head>
 <body>
 <main>
+<button class="updbar" id="updBar" hidden></button>
 <div class="topbar" id="topbar" hidden>
   <button class="iconbtn" id="btnBack" aria-label="Quay lại"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
   <div class="ttl" id="topTitle"></div>
@@ -260,10 +273,9 @@ details[open].card summary::after{content:"－"}
     <h1 id="lockTitle">Mở khoá</h1>
     <p class="muted" id="lockHint">Nhập mã PIN để mở biên bản của bạn.</p>
     <div class="dots" id="dots"></div>
-    <input id="pin" type="password" hidden>
-    <input id="pin2" type="password" hidden>
     <div class="keypad" id="keypad"></div>
     <button class="primary" id="btnUnlock" style="min-width:220px">Mở khoá</button>
+    <button class="ghost" id="btnPinCancel" hidden>Huỷ</button>
     <p class="err" id="lockErr"></p>
   </div>
 </section>
@@ -298,8 +310,17 @@ details[open].card summary::after{content:"－"}
         <button role="radio" data-theme="auto">Theo điện thoại</button><button role="radio" data-theme="light">Sáng</button><button role="radio" data-theme="dark">Tối</button>
       </div>
     </div>
+    <p class="sec-label">Dữ liệu trên AssemblyAI</p>
+    <div class="card">
+      <p class="muted">Sau mỗi lần chuyển thành chữ, app tự xoá bản chép lời và file ghi âm trên máy chủ AssemblyAI. Bấm nút dưới để kiểm tra xem còn sót bản nào không.</p>
+      <button id="btnScan">Kiểm tra dữ liệu còn lưu</button>
+      <p class="muted" id="scanStatus"></p>
+      <button class="danger" id="btnPurge" hidden>Xoá các bản còn lưu</button>
+    </div>
     <p class="sec-label">Bảo mật</p>
     <div class="card">
+      <button id="btnChangePin">Đổi mã PIN</button>
+      <p class="muted">Mã dài 8–10 số khó dò hơn nhiều so với 6 số.</p>
       <button id="btnLock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Khoá app ngay</button>
       <p class="muted">App tự khoá sau 10 phút không dùng. Quên mã PIN thì không mở lại được dữ liệu cũ.</p>
       <button class="danger" id="btnWipe">Xoá toàn bộ dữ liệu trên máy</button>
@@ -363,7 +384,7 @@ details[open].card summary::after{content:"－"}
     <div><h1 id="workTitle" style="font-size:22px">Đang chuyển thành chữ</h1><p class="muted" id="workNote">Họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.</p></div>
     <div class="card" style="width:100%">
       <ul class="steps" id="steps">
-        <li data-s="up"><span class="b">1</span>Tải file ghi âm lên</li>
+        <li data-s="up"><span class="b">1</span><span id="upLabel">Tải file ghi âm lên</span></li>
         <li data-s="tr"><span class="b">2</span>Chuyển giọng nói thành chữ, phân biệt người nói</li>
         <li data-s="save"><span class="b">3</span>Lưu kết quả trên máy</li>
       </ul>
@@ -412,6 +433,7 @@ details[open].card summary::after{content:"－"}
       <div id="spkBox" class="stack"></div>
       <datalist id="peopleList"></datalist>
       <button class="primary" id="btnSaveNames">Lưu tên người nói</button>
+      <p class="muted" id="sttInfo"></p>
     </div>
     <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Chỉ sao chép lời thoại</button>
     <button class="danger" id="btnDel">Xoá cuộc họp này</button>
@@ -432,7 +454,7 @@ details[open].card summary::after{content:"－"}
 
 <script>
 "use strict";
-const APP_VERSION = "2026.11.14";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
+const APP_VERSION = "2026.11.14.2";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const $ = id => document.getElementById(id);
@@ -493,17 +515,19 @@ const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
-async function deriveKey(pin, salt){
+const KDF_ITER = 600000;                             // số vòng băm cho mã PIN mới tạo hoặc mới đổi
+const kdfIter = () => +lsGet("bb_kdf") || 250000;    // dữ liệu tạo trước bản 2026.11.14.2 dùng 250.000 vòng
+async function deriveKey(pin, salt, iter){
   const base = await crypto.subtle.importKey("raw", te.encode(pin), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:250000, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:iter, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
 }
-async function enc(obj, replacer){
+async function enc(obj, replacer, key = S.key){
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, S.key, te.encode(JSON.stringify(obj, replacer)));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, te.encode(JSON.stringify(obj, replacer)));
   return {iv:b64(iv), ct:b64(ct)};
 }
-async function dec(box){
-  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(box.iv)}, S.key, unb64(box.ct));
+async function dec(box, key = S.key){
+  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(box.iv)}, key, unb64(box.ct));
   return JSON.parse(td.decode(pt));
 }
 let dbp;
@@ -511,7 +535,8 @@ function db(){ return dbp ||= new Promise((res,rej) => { const r = indexedDB.ope
   r.onupgradeneeded = () => r.result.createObjectStore("meetings",{keyPath:"id"});
   r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function tx(mode, fn){ const d = await db(); return new Promise((res,rej) => { const t = d.transaction("meetings", mode);
-  const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); }
+  const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result);
+  t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("không ghi được dữ liệu")); }); }
 const NO_SAVE = (k, v) => k === "_edit" ? undefined : v;   // cờ "đang sửa" chỉ dùng trên màn hình, không lưu
 async function saveMeeting(m){
   const box = await enc(m, NO_SAVE); await tx("readwrite", st => st.put({id:m.id, ...box}));
@@ -529,66 +554,131 @@ async function delMeeting(id){ await tx("readwrite", st => st.delete(id)); S.all
 async function setJob(j){ if (j) lsSet("bb_job", JSON.stringify(await enc(j))); else lsDel("bb_job"); }
 async function getJob(){ const raw = lsGet("bb_job"); if (!raw) return null; try{ return await dec(JSON.parse(raw)); }catch(e){ return null; } }
 
-/* ---------- Mở khoá với bàn phím số ---------- */
+/* ---------- Màn nhập mã PIN: mở khoá, tạo mã lần đầu, đổi mã ---------- */
 const hasPin = () => !!lsGet("bb_salt");
-let pinStage = 1; // 1: nhập mã, 2: nhập lại (khi tạo mới)
-function curPin(){ return pinStage === 2 ? $("pin2") : $("pin"); }
-function drawDots(){ const n = curPin().value.length, d = $("dots"); d.innerHTML = "";
+const PIN = { mode:"unlock", stage:1, buf:"", first:"" };
+const PIN_TEXT = {   // [tiêu đề, gợi ý, chữ trên nút] cho từng bước
+  unlock: [["Mở khoá", "Nhập mã PIN để mở biên bản của bạn.", "Mở khoá"]],
+  create: [["Tạo mã PIN", "Ít nhất 6 số, nên dùng 8–10 số. Mã này mã hoá mọi biên bản trên máy, quên mã là mất dữ liệu.", "Tiếp tục"],
+           ["Nhập lại mã PIN", "Nhập lại để xác nhận.", "Tạo mã PIN"]],
+  change: [["Đổi mã PIN", "Nhập mã PIN hiện tại.", "Tiếp tục"],
+           ["Mã PIN mới", "Ít nhất 6 số, nên dùng 8–10 số.", "Tiếp tục"],
+           ["Nhập lại mã PIN mới", "Nhập lại để xác nhận.", "Đổi mã PIN"]]
+};
+function drawDots(){ const n = PIN.buf.length, d = $("dots"); d.innerHTML = "";
   for (let i = 0; i < Math.max(6, n); i++) d.appendChild(el("i", i < n ? "on" : "")); }
+function pinText(){ const [t, h, b] = PIN_TEXT[PIN.mode][PIN.stage - 1];
+  $("lockTitle").textContent = t; $("lockHint").textContent = h; $("btnUnlock").textContent = b; $("btnPinCancel").hidden = PIN.mode !== "change"; }
+function pinStage(n){ PIN.stage = n; PIN.buf = ""; pinText(); drawDots(); }
+function startPin(mode){ PIN.mode = mode; PIN.first = ""; $("lockErr").textContent = ""; pinStage(1); show("scrLock"); }
+function initLock(){ startPin(hasPin() ? "unlock" : "create"); }
+function pinKey(v){ if (!v) return; if (v === "⌫") PIN.buf = PIN.buf.slice(0,-1); else if (PIN.buf.length < 12) PIN.buf += v;
+  $("lockErr").textContent = ""; drawDots(); }
 (function buildPad(){ const k = $("keypad");
   ["1","2","3","4","5","6","7","8","9","","0","⌫"].forEach(v => { const b = el("button", v === "⌫" ? "fn" : "", v);
     if (!v) b.style.visibility = "hidden"; else if (v === "⌫") b.setAttribute("aria-label","Xoá một số");
-    b.onclick = () => { const p = curPin(); if (v === "⌫") p.value = p.value.slice(0,-1); else if (p.value.length < 12) p.value += v;
-      $("lockErr").textContent = ""; drawDots(); };
-    k.appendChild(b); }); })();
+    b.onclick = () => pinKey(v); k.appendChild(b); }); })();
 document.addEventListener("keydown", e => { if ($("scrLock").hidden) return;
-  if (/^\d$/.test(e.key)) { const p = curPin(); if (p.value.length < 12){ p.value += e.key; drawDots(); } }
-  else if (e.key === "Backspace"){ const p = curPin(); p.value = p.value.slice(0,-1); drawDots(); }
+  if (/^\d$/.test(e.key)) pinKey(e.key); else if (e.key === "Backspace") pinKey("⌫");
   else if (e.key === "Enter"){ e.preventDefault(); $("btnUnlock").click(); } });
-function lockText(){ const first = !hasPin();
-  $("lockTitle").textContent = first ? (pinStage === 1 ? "Tạo mã PIN" : "Nhập lại mã PIN") : "Mở khoá";
-  $("lockHint").textContent = first ? (pinStage === 1 ? "Ít nhất 6 số. Mã này mã hoá mọi biên bản trên máy, quên mã là mất dữ liệu." : "Nhập lại để xác nhận.") : "Nhập mã PIN để mở biên bản của bạn.";
-  $("btnUnlock").textContent = first ? (pinStage === 1 ? "Tiếp tục" : "Tạo mã PIN") : "Mở khoá"; }
 function shake(msg){ $("lockErr").textContent = msg; const d = $("dots"); d.classList.remove("shake"); d.offsetWidth; d.classList.add("shake"); }
-function initLock(){ pinStage = 1; $("pin").value = ""; $("pin2").value = ""; $("lockErr").textContent = ""; lockText(); drawDots(); show("scrLock"); }
+
+// Thử mở khoá bằng mã vừa nhập. Trả về true, hoặc câu báo lỗi.
+// Có xử lý trường hợp lần đổi mã PIN trước bị dừng giữa chừng (còn "bb_next"): xem dữ liệu thật đang được mã hoá bằng khoá nào.
+async function tryUnlock(pin){
+  let next = null; try{ next = JSON.parse(lsGet("bb_next") || "null"); }catch(e){}
+  const metas = [{salt: lsGet("bb_salt"), kdf: kdfIter(), check: lsGet("bb_check")}];
+  if (next) metas.push({salt: next.salt, kdf: next.kdf, check: JSON.stringify(next.check), next: true});
+  const rows = next ? (await tx("readonly", st => st.getAll(null, 5))) || [] : [];
+  let wrongSide = "";
+  for (const mt of metas){
+    const k = await deriveKey(pin, unb64(mt.salt), mt.kdf);
+    try{ await dec(JSON.parse(mt.check), k); }catch(e){ continue; }
+    let readable = 0; for (const r of rows){ try{ await dec(r, k); readable++; }catch(e){} }
+    if (next && rows.length && !readable){ wrongSide = mt.next ? "new" : "old"; continue; }
+    S.key = k; if (mt.next) promoteNext(next); else if (next) lsDel("bb_next");
+    return true;
+  }
+  if (wrongSide === "old") return "Mã PIN đã được đổi. Hãy nhập mã PIN mới.";
+  if (wrongSide === "new") return "Lần đổi mã PIN trước chưa hoàn tất. Hãy nhập mã PIN cũ.";
+  return "Sai mã PIN, thử lại.";
+}
+async function afterUnlock(){
+  const cfg = lsGet("bb_cfg");
+  if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey = c.apiKey || ""; S.model = c.model || S.model; S.writer = c.writer || "claude"; }catch(e){} }
+  const job = await getJob();
+  if (job && job.del){ S.job = null; finishDelete(job.id); } else S.job = job && job.id ? job : null;
+  if (!S.apiKey) openSettings(); else openHome();
+}
+// Đổi mã PIN = mã hoá lại toàn bộ dữ liệu bằng khoá mới. Làm theo thứ tự sao cho app bị đóng ở bất kỳ bước nào cũng không mất dữ liệu.
+async function changePin(newPin){
+  if (S.busy || S.genId) throw new Error("đang xử lý việc khác, hãy thử lại sau");
+  if (!S.loaded){ S.all = await loadMeetings(); S.loaded = true; }
+  const job = await getJob();
+  const salt = crypto.getRandomValues(new Uint8Array(16)), key = await deriveKey(newPin, salt, KDF_ITER);
+  // 1) Mã hoá lại mọi thứ bằng khoá mới, vẫn nằm trong bộ nhớ
+  const boxes = []; for (const m of S.all) boxes.push({id: m.id, ...(await enc(m, NO_SAVE, key))});
+  const next = { salt: b64(salt), kdf: KDF_ITER, check: await enc("ok", null, key),
+    cfg: await enc({apiKey:S.apiKey, model:S.model, writer:S.writer}, null, key), job: job ? await enc(job, null, key) : null };
+  // 2) Ghi "thông tin mở khoá kế tiếp" ra trước (không nuốt lỗi: ghi không được thì dừng, chưa đụng tới dữ liệu)
+  localStorage.setItem("bb_next", JSON.stringify(next));
+  // 3) Thay toàn bộ cuộc họp trong MỘT giao dịch: được cả, hoặc không đổi gì
+  try{ await tx("readwrite", st => { for (const b of boxes) st.put(b); }); }
+  catch(e){ lsDel("bb_next"); throw e; }
+  // 4) Chuyển hẳn sang khoá mới
+  promoteNext(next); S.key = key;
+}
+function promoteNext(n){
+  localStorage.setItem("bb_salt", n.salt); localStorage.setItem("bb_kdf", String(n.kdf)); localStorage.setItem("bb_check", JSON.stringify(n.check));
+  localStorage.setItem("bb_cfg", JSON.stringify(n.cfg)); if (n.job) localStorage.setItem("bb_job", JSON.stringify(n.job)); else lsDel("bb_job");
+  lsDel("bb_next");
+}
+$("btnPinCancel").onclick = () => openSettings();
 $("btnUnlock").onclick = async () => {
-  const pin = $("pin").value.trim(); $("lockErr").textContent = "";
+  const pin = PIN.buf; $("lockErr").textContent = "";
   if (S.unlocking) return; S.unlocking = true;
   try{
-    if (!hasPin()){
-      if (pinStage === 1){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); pinStage = 2; lockText(); drawDots(); return; }
-      if (pin !== $("pin2").value.trim()){ pinStage = 1; $("pin").value = ""; $("pin2").value = ""; lockText(); drawDots(); return shake("Hai lần nhập không giống nhau, hãy đặt lại."); }
-      const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt);
-      lsSet("bb_salt", b64(salt)); lsSet("bb_check", JSON.stringify(await enc("ok")));
-    } else {
-      $("btnUnlock").textContent = "Đang mở…";
-      S.key = await deriveKey(pin, unb64(lsGet("bb_salt")));
-      try{ await dec(JSON.parse(lsGet("bb_check"))); }
-      catch(e){ S.key = null; $("pin").value = ""; drawDots(); lockText(); return shake("Sai mã PIN, thử lại."); }
+    if (PIN.mode === "create"){
+      if (PIN.stage === 1){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); PIN.first = pin; return pinStage(2); }
+      if (pin !== PIN.first){ PIN.first = ""; pinStage(1); return shake("Hai lần nhập không giống nhau, hãy đặt lại."); }
+      const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt, KDF_ITER);
+      lsSet("bb_salt", b64(salt)); lsSet("bb_kdf", String(KDF_ITER)); lsSet("bb_check", JSON.stringify(await enc("ok")));
+      PIN.buf = PIN.first = ""; return await afterUnlock();
     }
-    $("pin").value = ""; $("pin2").value = "";
-    const cfg = lsGet("bb_cfg");
-    if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey = c.apiKey || ""; S.model = c.model || S.model; S.writer = c.writer || "claude"; }catch(e){} }
-    const job = await getJob();
-    if (job && job.del){ S.job = null; finishDelete(job.id); } else S.job = job && job.id ? job : null;
-    if (!S.apiKey) openSettings(); else openHome();
-  }catch(e){ $("lockErr").textContent = "Lỗi: " + e.message; }
+    if (PIN.mode === "unlock"){
+      $("btnUnlock").textContent = "Đang mở…";
+      const r = await tryUnlock(pin);
+      if (r !== true){ pinStage(1); return shake(r); }
+      PIN.buf = ""; return await afterUnlock();
+    }
+    // Đổi mã PIN: bước 1 kiểm tra mã hiện tại, bước 2 và 3 nhập mã mới hai lần
+    if (PIN.stage === 1){
+      const k = await deriveKey(pin, unb64(lsGet("bb_salt")), kdfIter());
+      try{ await dec(JSON.parse(lsGet("bb_check")), k); }catch(e){ pinStage(1); return shake("Sai mã PIN, thử lại."); }
+      return pinStage(2);
+    }
+    if (PIN.stage === 2){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); PIN.first = pin; return pinStage(3); }
+    if (pin !== PIN.first){ PIN.first = ""; pinStage(2); return shake("Hai lần nhập không giống nhau, hãy nhập lại mã mới."); }
+    $("btnUnlock").textContent = "Đang mã hoá lại dữ liệu…";
+    await changePin(pin); PIN.buf = PIN.first = ""; toast("Đã đổi mã PIN"); openSettings();
+  }catch(e){ pinText(); $("lockErr").textContent = "Lỗi: " + e.message; }
   finally{ S.unlocking = false; }
 };
 // Khi khoá: xoá mọi nội dung đã giải mã khỏi bộ nhớ và khỏi màn hình (không chỉ ẩn đi)
 function clearSensitive(){
-  Object.assign(S, {key:null, apiKey:"", cur:null, all:[], loaded:false, job:null, trKey:null, genText:""});
-  dropAudio();
+  Object.assign(S, {key:null, apiKey:"", cur:null, all:[], loaded:false, job:null, trKey:null, genText:"", remote:[]});
+  PIN.buf = PIN.first = ""; dropAudio();
   ["meetList","vChips","spkBox","peopleList","tView","tab_min","tab_task"].forEach(id => $(id).innerHTML = "");
-  ["vTitle","homeSub","minErr","minProgText","workErr","newErr","keyStatus"].forEach(id => $(id).textContent = "");
+  ["vTitle","homeSub","minErr","minProgText","workErr","newErr","keyStatus","scanStatus","sttInfo"].forEach(id => $(id).textContent = "");
   ["apiKey","cbText","cbPrompt","q","mTitle","mPeople","mSpeakers"].forEach(id => $(id).value = "");
-  $("claudeBox").hidden = true;
+  $("claudeBox").hidden = true; $("btnPurge").hidden = true;
 }
 $("btnLock").onclick = () => { clearSensitive(); initLock(); };
 document.addEventListener("visibilitychange", () => {
   if (document.hidden){ S.hiddenAt = Date.now(); return; }
   if (S.busy || S.rec) keepAwake();
   if (S.key && !S.busy && !S.rec && S.hiddenAt && Date.now() - S.hiddenAt > 10*60*1000) $("btnLock").click();
+  checkUpdate();
 });
 
 /* ---------- Điều hướng ---------- */
@@ -600,7 +690,8 @@ $("btnSettings").onclick = openSettings;
 /* ---------- Cài đặt ---------- */
 function openSettings(){
   $("apiKey").value = S.apiKey; $("llmModel").value = S.model; $("writer").value = S.writer; $("llmModelLbl").hidden = S.writer !== "aai";
-  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true; show("scrSettings");
+  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true;
+  $("scanStatus").textContent = ""; $("btnPurge").hidden = true; show("scrSettings");
 }
 $("writer").onchange = () => $("llmModelLbl").hidden = $("writer").value !== "aai";
 $("btnSaveKey").onclick = async () => {
@@ -617,9 +708,39 @@ $("btnWipe").onclick = async () => {
   if ($("wipeConfirm").hidden){ $("wipeConfirm").hidden = false; return; }
   const j = S.job || await getJob(); if (j && j.id) deleteRemote(j.id);   // cố xoá nốt bản còn nằm trên máy chủ AssemblyAI
   // Chỉ xoá dữ liệu của app này: địa chỉ github.io dùng chung kho lưu trữ với mọi trang khác của cùng tài khoản
-  ["bb_salt","bb_check","bb_cfg","bb_job"].forEach(lsDel);
+  ["bb_salt","bb_kdf","bb_check","bb_cfg","bb_job","bb_next"].forEach(lsDel);
   const d = await db(); d.close(); dbp = null; indexedDB.deleteDatabase("bienban");
   clearSensitive(); toast("Đã xoá toàn bộ dữ liệu"); initLock();
+};
+$("btnChangePin").onclick = () => { if (S.busy || S.genId) return toast("Đang xử lý việc khác, hãy thử lại sau"); startPin("change"); };
+// Dọn dữ liệu còn sót trên máy chủ AssemblyAI. Bản đã xoá chỉ còn "vỏ" trong danh sách, nhận ra nhờ audio_url có chữ deleted_by_user.
+async function listRemote(){
+  const live = []; let path = "/v2/transcript?limit=200";
+  for (let page = 0; path && page < 25; page++){
+    const r = await aai(path);
+    for (const t of r.transcripts || []) if (!/deleted_by_user/.test(String(t.audio_url || "")) && !(S.job && S.job.id === t.id)) live.push(t.id);
+    const older = r.page_details && r.page_details.prev_url;   // danh sách xếp mới trước, "prev" là trang cũ hơn
+    path = older ? String(older).replace(/^https?:\/\/[^/]+/, "") : null;
+  }
+  return live;
+}
+async function scanRemote(){
+  const st = $("scanStatus"), b = $("btnPurge"); st.textContent = "Đang kiểm tra…"; b.hidden = true; b._sure = false;
+  try{ S.remote = await listRemote();
+    st.textContent = (S.remote.length ? `Còn ${S.remote.length} bản chép lời nằm trên máy chủ AssemblyAI.` : "Không còn bản chép lời nào trên máy chủ AssemblyAI.")
+      + (S.job ? " Chưa tính cuộc họp đang chuyển thành chữ dở: bản đó sẽ được xoá sau khi bạn lấy kết quả." : "");
+    b.hidden = !S.remote.length; b.textContent = `Xoá ${S.remote.length} bản còn lưu`;
+  }catch(e){ st.textContent = "Chưa kiểm tra được: " + e.message; }
+}
+$("btnScan").onclick = scanRemote;
+$("btnPurge").onclick = async () => { const b = $("btnPurge"), ids = S.remote || [];
+  if (!b._sure){ b._sure = true; b.textContent = "Bấm lần nữa để xoá"; return; }
+  b.disabled = true; let done = 0;
+  for (const id of ids){ $("scanStatus").textContent = `Đang xoá ${done + 1}/${ids.length}…`; if (await deleteRemote(id)) done++; }
+  b.disabled = false;
+  await scanRemote();   // đếm lại để chắc chắn
+  if (done < ids.length) $("scanStatus").textContent += ` (${ids.length - done} bản chưa xoá được, hãy thử lại sau.)`;
+  else toast(`Đã xoá ${done} bản trên máy chủ AssemblyAI`);
 };
 
 /* ---------- Chế độ sáng / tối ---------- */
@@ -654,7 +775,7 @@ function renderList(){
   const all = S.all.slice().sort((a,b) => (b.date || "").localeCompare(a.date || "") || b.created - a.created);
   const ms = all.filter(m => !q || [m.title, m.people, ...Object.values(m.names || {})].join(" ").toLowerCase().includes(q));
   const todo = all.reduce((n,m) => n + openTasks(m), 0);
-  $("homeSub").textContent = all.length ? `${all.length} cuộc họp · ${todo} việc chưa xong` : "";
+  $("homeSub").textContent = all.length ? `${all.length} cuộc họp · ${todo} đầu việc chưa xong` : "";
   $("emptyList").hidden = all.length > 0 || !!S.job;
   if (S.job && !S.jobRunning) list.appendChild(jobBanner(S.job));
   if (all.length && !ms.length) list.appendChild(el("p","muted","Không tìm thấy cuộc họp phù hợp."));
@@ -667,8 +788,8 @@ function renderList(){
     const mid = el("div"); mid.append(el("span","t", m.title || "(Không tên)"));
     const meta = el("div","meta");
     if (m.durationText) meta.append(withIcon("span","", "clock", shortDur(m.durationText)));
-    meta.append(withIcon("span","", "people", Object.keys(m.names || {}).length + " người"));
-    const open = openTasks(m); if (open) meta.append(withIcon("span","", "flag", open + " việc"));
+    meta.append(withIcon("span","", "people", speakerColors(m).count + " người"));
+    const open = openTasks(m); if (open) meta.append(withIcon("span","", "flag", open + " đầu việc"));
     mid.append(meta);
     const st = el("span","status" + (m.minutes ? " ok" : "")); st.title = m.minutes ? "Đã có biên bản" : "Chưa có biên bản";
     b.append(box, mid, st); b.onclick = () => openMeeting(m, "min"); group.appendChild(b); }
@@ -738,6 +859,17 @@ async function aai(path, opts = {}){
   return j;
 }
 const transient = e => !e.status || e.status === 429 || e.status >= 500;   // mất mạng hoặc dịch vụ quá tải: thử lại được
+// Tải file ghi âm lên, có báo tiến độ (fetch không báo được phần trăm đã gửi nên dùng XMLHttpRequest)
+function uploadAudio(blob, onProgress){
+  return new Promise((res, rej) => { const x = new XMLHttpRequest(); x.open("POST", AAI + "/v2/upload");
+    x.setRequestHeader("authorization", S.apiKey); x.setRequestHeader("content-type", "application/octet-stream");
+    x.upload.onprogress = e => { if (e.lengthComputable && e.total) onProgress(e.loaded / e.total); };
+    x.onload = () => { let j; try{ j = JSON.parse(x.responseText); }catch(e){ j = {error: x.responseText}; }
+      if (x.status >= 200 && x.status < 300) return res(j);
+      const err = new Error((j && j.error) || ("Lỗi " + x.status)); err.status = x.status; rej(err); };
+    x.onerror = () => rej(new Error("Mất kết nối khi đang tải file lên."));
+    x.send(blob); });
+}
 // Xoá bản chép lời và file ghi âm trên máy chủ AssemblyAI. Trả về true nếu chắc chắn không còn gì trên đó.
 async function deleteRemote(id){
   try{ await aai("/v2/transcript/" + id, {method:"DELETE"}); return true; }
@@ -756,7 +888,8 @@ async function createTranscript(audioUrl, meta){
   if (extras.keyterms_prompt || extras.speaker_options) variants.push({});
   let last;
   for (const v of variants){
-    try{ return await aai("/v2/transcript", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({...body, ...v})}); }
+    try{ const res = await aai("/v2/transcript", {method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({...body, ...v})});
+      return {id: res.id, opts: Object.keys(v)}; }   // opts: tuỳ chọn phụ mà AssemblyAI chịu nhận, để hiện cho người dùng biết
     catch(e){ last = e; if (transient(e) || e.status === 401) throw e; }
   }
   throw last;
@@ -783,7 +916,7 @@ function buildMeeting(job, res){
   if (!utts.length){ const err = new Error("Không nhận ra lời nói nào trong file ghi âm này."); err.final = true; throw err; }
   const spk = [...new Set(utts.map(u => u.s))].sort();
   return { id: job.mid, created: Date.now(), ...job.meta, utts, names: Object.fromEntries(spk.map(s => [s,""])),
-    durationText: res.audio_duration ? hms(res.audio_duration) : "", model: res.speech_model_used || res.speech_model || "", minutes:null };
+    durationText: res.audio_duration ? hms(res.audio_duration) : "", model: res.speech_model_used || res.speech_model || "", sttOpts: job.opts || [], minutes:null };
 }
 // job = {meta} cho lượt mới (tải file lên trước), hoặc {id, mid, meta, started} để lấy tiếp kết quả của lượt đang dở
 async function runJob(job){
@@ -792,13 +925,14 @@ async function runJob(job){
   $("workTitle").textContent = job.id ? "Đang lấy lại kết quả" : "Đang chuyển thành chữ";
   $("workNote").textContent = "Họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.";
   document.querySelectorAll("#steps li").forEach((li,i) => { li.className = ""; li.querySelector(".b").textContent = i + 1; });
+  $("upLabel").textContent = "Tải file ghi âm lên";
   try{
     if (!job.id){
       step("up","on");
-      const up = await aai("/v2/upload", {method:"POST", headers:{"content-type":"application/octet-stream"}, body:S.audio});
-      step("up","done"); step("tr","on");
+      const up = await uploadAudio(S.audio, f => $("upLabel").textContent = `Đang tải file ghi âm lên: ${Math.round(f * 100)}%`);
+      $("upLabel").textContent = "Tải file ghi âm lên"; step("up","done"); step("tr","on");
       const created = await createTranscript(up.upload_url, job.meta);
-      job = {...job, id: created.id, mid: crypto.randomUUID(), started: Date.now()}; S.job = job; await setJob(job);
+      job = {...job, id: created.id, opts: created.opts, mid: crypto.randomUUID(), started: Date.now()}; S.job = job; await setJob(job);
     } else { step("up","done"); step("tr","on"); }
     const res = await pollTranscript(job);
     step("tr","done"); step("save","on");
@@ -825,8 +959,18 @@ $("btnWorkBack").onclick = () => (S.job || !S.audio) ? openHome() : show("scrNew
 
 /* ---------- Chi tiết cuộc họp ---------- */
 const who = (m, s) => m.names[s] || ("Người " + s);
-const spkIndex = (m, s) => Math.max(0, Object.keys(m.names).indexOf(s)) % 6 + 1;
-function avatar(m, s){ const i = spkIndex(m, s), a = el("div","av", (m.names[s] || s).trim().split(/\s+/).pop()[0].toUpperCase());
+// Máy đôi khi tách một người thành hai nhãn. Hai nhãn được gõ cùng một tên là một người: dùng chung màu và chỉ đếm một lần.
+// Trả về {nhãn: số màu 1..6, count: số người thật, same: {nhãn: nhãn đứng trước có cùng tên}}
+function speakerColors(m){
+  const keys = [], first = {}, map = {count:0, same:{}};
+  for (const s of Object.keys(m.names || {})){
+    const k = (m.names[s] || "").trim().toLowerCase() || "#" + s; let i = keys.indexOf(k);
+    if (i < 0){ keys.push(k); i = keys.length - 1; first[k] = s; } else map.same[s] = first[k];
+    map[s] = i % 6 + 1;
+  }
+  map.count = keys.length; return map;
+}
+function avatar(m, s, colors){ const i = colors[s] || 1, a = el("div","av", (m.names[s] || s).trim().split(/\s+/).pop()[0].toUpperCase());
   a.style.background = `var(--s${i})`; a.style.color = `var(--s${i}t)`; return a; }
 document.querySelectorAll(".seg button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 function setTab(t){ S.tab = t;
@@ -840,14 +984,14 @@ function openMeeting(m, tab, keepScroll){
   if (S.trKey !== trKey){ S.trKey = trKey; renderSpeakers(m); renderTranscript(m); }   // lời thoại dài: chỉ vẽ lại khi thực sự đổi
   renderMinutes(m); renderTasks(m); renderBar(m); renderClaudeBox(m); minStatus(S.genText);
   setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; if (keepScroll) window.scrollTo(0, y);
-  loadXLSX().catch(() => {});   // tải sẵn thư viện Excel trong lúc người dùng đọc biên bản
+  loadExcel().catch(() => {});   // tải sẵn thư viện Excel trong lúc người dùng đọc biên bản
 }
 function renderHead(m){
   $("vTitle").textContent = m.title;
   const ch = $("vChips"); ch.innerHTML = "";
   if (m.date) ch.append(withIcon("span","chip","cal", fmtDate(m.date)));
   if (m.durationText) ch.append(withIcon("span","chip","clock", shortDur(m.durationText)));
-  ch.append(withIcon("span","chip","people", Object.keys(m.names).length + " người nói"));
+  ch.append(withIcon("span","chip","people", speakerColors(m).count + " người nói"));
   ch.append(m.minutes ? withIcon("span","chip ok","check","Đã có biên bản") : el("span","chip warn","Chưa có biên bản"));
   const pend = m.minutes ? confirmItems(m).filter(q => !q.ok).length : 0;
   if (pend){ const c = el("button","chip warn", pend + " điểm cần xác nhận");
@@ -856,27 +1000,35 @@ function renderHead(m){
   document.querySelector('.seg [data-tab="task"]').innerHTML = badge("Đầu việc", openTasks(m));
 }
 function renderBar(m){
-  const waiting = m.minutes ? confirmItems(m).filter(q => q.ok && !q.applied).length : 0; const gen = !!S.genId;
-  $("btnApply").hidden = !waiting; $("btnMinutes").hidden = !!waiting;
-  $("btnApply").textContent = `Cập nhật biên bản (${waiting})`;
-  $("btnMinutes").textContent = gen ? (S.genId === m.id ? "Đang tạo…" : "Đang tạo biên bản khác…") : (m.minutes ? "Tạo lại biên bản" : "Tạo biên bản");
-  $("btnMinutes").disabled = $("btnApply").disabled = gen;
+  const waiting = m.minutes ? confirmItems(m).filter(q => q.ok && !q.applied).length : 0; const gen = !!S.genId, has = !!m.minutes;
+  const bMin = $("btnMinutes"), bApply = $("btnApply"), bX = $("btnExcel");
+  bApply.hidden = !waiting; bMin.hidden = !!waiting; clearTimeout(bMin._t); bMin._sure = false;
+  bApply.textContent = `Cập nhật biên bản (${waiting})`;
+  bMin.textContent = gen ? (S.genId === m.id ? "Đang tạo…" : "Đang tạo biên bản khác…") : (has ? "Tạo lại biên bản" : "Tạo biên bản");
+  bMin.disabled = bApply.disabled = gen;
+  // Nút màu hồng là việc cần nhất lúc này: chưa có biên bản thì Tạo; có xác nhận đang chờ thì Cập nhật; còn lại là Tải Excel
+  const main = waiting ? bApply : has ? bX : bMin;
+  [bMin, bApply, bX].forEach(b => b.classList.toggle("primary", b === main));
+  bX.style.order = main === bX ? 2 : 0;   // nút chính luôn nằm bên phải, gần ngón cái
 }
 function renderSpeakers(m){
-  const box = $("spkBox"); box.innerHTML = "";
+  const box = $("spkBox"); box.innerHTML = ""; const colors = speakerColors(m);
+  const OPT = {speaker_options:"khoảng số người nói", keyterms_prompt:"tên riêng cần nghe đúng"};
+  $("sttInfo").textContent = [m.model ? `Mô hình chuyển giọng nói: ${m.model}.` : "",
+    (m.sttOpts || []).length ? `Gợi ý đã gửi kèm: ${m.sttOpts.map(o => OPT[o] || o).join(", ")}.` : ""].filter(Boolean).join(" ");
   const dl = $("peopleList"); dl.innerHTML = "";
   (m.people || "").split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(n => { const o = el("option"); o.value = n; dl.appendChild(o); });
   for (const s of Object.keys(m.names)){ const said = m.utts.filter(u => u.s === s); const first = said.find(u => u.t.length > 25) || said[0];
     const c = el("div","spkcard"); const right = el("div");
     const inp = el("input"); inp.id = "name_" + s; inp.value = m.names[s]; inp.placeholder = `Tên thật của Người ${s}`; inp.setAttribute("list","peopleList");
-    right.append(el("span","n", `Người ${s} · nói ${said.length} lần`),
+    right.append(el("span","n", `Người ${s} · nói ${said.length} lần` + (colors.same[s] ? ` · đã gộp với Người ${colors.same[s]} (cùng tên)` : "")),
       first ? el("span","q", "“" + first.t.slice(0,110) + (first.t.length > 110 ? "…" : "") + "”") : el("span"), inp);
-    c.append(avatar(m, s), right); box.appendChild(c); }
+    c.append(avatar(m, s, colors), right); box.appendChild(c); }
 }
-function renderTranscript(m){ const v = $("tView"); v.innerHTML = "";
+function renderTranscript(m){ const v = $("tView"); v.innerHTML = ""; const colors = speakerColors(m);
   for (const u of m.utts){ const d = el("div","utt"); d.dataset.ms = u.a; const bub = el("div","bubble");
-    const h = el("div","h", who(m,u.s)); h.style.color = `var(--s${spkIndex(m,u.s)}t)`; h.append(el("span","", hms(u.a/1000)));
-    bub.append(h, el("p","", u.t)); d.append(avatar(m, u.s), bub); v.appendChild(d); } }
+    const h = el("div","h", who(m,u.s)); h.style.color = `var(--s${colors[u.s] || 1}t)`; h.append(el("span","", hms(u.a/1000)));
+    bub.append(h, el("p","", u.t)); d.append(avatar(m, u.s, colors), bub); v.appendChild(d); } }
 $("btnSaveNames").onclick = async () => { const m = S.cur;
   for (const s of Object.keys(m.names)) m.names[s] = $("name_" + s).value.trim();
   await saveMeeting(m); openMeeting(m, "tr"); toast("Đã lưu tên người nói"); };
@@ -885,9 +1037,12 @@ $("btnDel").onclick = async () => { if ($("delConfirm").hidden){ $("delConfirm")
 
 /* ---------- Nội dung yêu cầu gửi cho AI ---------- */
 function transcriptText(m){ return m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`).join("\n"); }
-const meetingInfo = m => `Thông tin: Chủ đề: ${m.title}. Ngày: ${fmtDate(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
+const THU = ["Chủ nhật","thứ Hai","thứ Ba","thứ Tư","thứ Năm","thứ Sáu","thứ Bảy"];
+const dateWithDay = d => d ? `${fmtDate(d)} (${THU[new Date(d + "T00:00").getDay()]})` : "(không rõ)";
+const meetingInfo = m => `Thông tin: Chủ đề: ${m.title}. Ngày họp: ${dateWithDay(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
 const INSTR = `Bạn là thư ký cuộc họp chuyên nghiệp. Dưới đây là lời thoại cuộc họp do máy chép từ ghi âm (tiếng Việt, xen lẫn tiếng Anh), đã chia theo người nói.
 Lưu ý: bản chép có thể sai chính tả, nghe nhầm thuật ngữ tiếng Anh, hoặc gán nhầm người nói ở vài câu. Hãy suy luận theo ngữ cảnh để hiểu đúng ý. Không bịa thông tin không có trong cuộc họp. Chi tiết không chắc chắn (tên, con số, hạn chót) ghi "[cần xác nhận]".
+Hạn hoặc mốc thời gian nói kiểu tương đối (ví dụ "thứ sáu tuần này", "cuối tháng") thì ghi kèm ngày cụ thể tính từ ngày họp, ví dụ "thứ sáu tuần này (20/11/2026)". Nếu không tính chắc được thì giữ nguyên lời nói.
 Viết bằng tiếng Việt có dấu, giữ thuật ngữ tiếng Anh chuyên môn khi cần.`;
 const SCHEMA = `Cấu trúc JSON của biên bản:
 {"chu_de":"","muc_dich":"","thanh_phan":["tên"],"tom_tat":"3-5 câu",
@@ -1086,12 +1241,37 @@ function applyAuto(m){
     finishApply(m, res, idx);
   }, "Biên bản đã được cập nhật", "Đã lưu xác nhận nhưng chưa cập nhật được vào biên bản: ");
 }
-$("btnMinutes").onclick = () => { $("minErr").textContent = ""; return S.writer === "claude" ? openClaude("gen") : generateAuto(S.cur); };
+$("btnMinutes").onclick = () => { const m = S.cur, b = $("btnMinutes"); $("minErr").textContent = "";
+  // Đã có biên bản: hỏi lại một lần, vì bản mới sẽ thay bản đang có (ở chế độ tự động còn tốn phí)
+  if (m.minutes && !b._sure){ b._sure = true; b.textContent = "Bấm lần nữa để tạo lại"; toast("Biên bản hiện tại sẽ được thay bằng bản mới.");
+    b._t = setTimeout(() => { if (S.cur) renderBar(S.cur); }, 4000); return; }
+  clearTimeout(b._t); b._sure = false;
+  return S.writer === "claude" ? openClaude("gen") : generateAuto(m); };
 $("btnApply").onclick = () => applyConfirmations(S.cur);
+const MARK = /\s*\[cần xác nhận\]/gi;
+function stripMarks(v){
+  if (typeof v === "string") return v.replace(MARK, "").trim();
+  if (Array.isArray(v)) return v.map(stripMarks);
+  if (v && typeof v === "object"){ const o = {}; for (const k in v) o[k] = stripMarks(v[k]); return o; }
+  return v;
+}
 // Đưa các xác nhận của người dùng vào nội dung biên bản (sửa ở mọi chỗ liên quan)
 function applyConfirmations(m){
-  if (!confirmItems(m).some(q => q.ok && !q.applied)) return openMeeting(m, "min", true);
+  const cx = confirmItems(m), pend = cx.filter(q => q.ok && !q.applied);
+  if (!pend.length) return openMeeting(m, "min", true);
+  // Mọi điểm đều được xác nhận là đúng, không sửa gì: app tự bỏ nhãn "[cần xác nhận]", không cần nhờ AI.
+  // Chỉ làm vậy khi số nhãn trong biên bản không nhiều hơn số điểm đã liệt kê, để không lỡ xoá nhãn của điểm chưa được hỏi.
+  const rest = {...m.minutes}; delete rest.can_xac_nhan;
+  const marks = (JSON.stringify(rest).match(MARK) || []).length;
+  if (cx.every(q => q.ok) && pend.every(q => !q.sua) && marks <= cx.length) return applyLocally(m, pend, rest);
   return S.writer === "claude" ? openClaude("apply") : applyAuto(m);
+}
+async function applyLocally(m, pend, rest){
+  keepUndo(m);
+  const nb = stripMarks(rest); nb.can_xac_nhan = m.minutes.can_xac_nhan; pend.forEach(q => q.applied = true);
+  m.minutes = nb; (m.lich_su ||= []).push({luc: stamp(), thay_doi:[`Đã xác nhận ${pend.length} điểm là đúng, bỏ nhãn “[cần xác nhận]”.`]});
+  m.lastChanges = m.lich_su[m.lich_su.length - 1]; delete m.cho;
+  await saveMeeting(m); openMeeting(m, "min"); toast("Biên bản đã được cập nhật");
 }
 
 /* ---------- Hiển thị biên bản ---------- */
@@ -1164,7 +1344,7 @@ function jumpTo(ms){
 }
 function renderTasks(m){
   const v = $("tab_task"); v.innerHTML = ""; const tasks = (m.minutes?.viec_theo_doi) || [];
-  if (!tasks.length){ v.appendChild(el("p","muted", m.minutes ? "Cuộc họp này không có việc cần theo dõi." : "Tạo biên bản để xem danh sách việc cần làm.")); return; }
+  if (!tasks.length){ v.appendChild(el("p","muted", m.minutes ? "Cuộc họp này không có đầu việc nào." : "Tạo biên bản để xem danh sách đầu việc.")); return; }
   v.appendChild(el("p","muted","Chạm vòng tròn để đánh dấu đã xong. Bấm Sửa để chỉnh người làm, hạn chót… Mọi thay đổi được ghi vào file Excel."));
   const unsure = s => /cần xác nhận/i.test(s || "");
   const refresh = () => { renderTasks(m); document.querySelector('.seg [data-tab="task"]').innerHTML = badge("Đầu việc", openTasks(m)); };
@@ -1204,48 +1384,85 @@ $("btnCopy").onclick = async () => { const m = S.cur;
   catch(e){ $("minErr").textContent = "Điện thoại chưa cho sao chép tự động: " + e.message; } };
 
 /* ---------- Xuất Excel ---------- */
-// Thư viện Excel nặng gần 900 KB nên không tải lúc mở app; tải ngầm khi mở một cuộc họp
-let xlsxP;
-function loadXLSX(){
-  return xlsxP ||= new Promise((res, rej) => { if (window.XLSX) return res();
-    const s = document.createElement("script"); s.src = "xlsx.full.min.js"; s.onload = () => res();
-    s.onerror = () => { xlsxP = null; s.remove(); rej(new Error("không tải được thư viện Excel")); }; document.head.appendChild(s); });
+// Thư viện Excel (ExcelJS) nặng gần 1 MB nên không tải lúc mở app; tải ngầm khi mở một cuộc họp
+let excelP;
+function loadExcel(){
+  return excelP ||= new Promise((res, rej) => { if (window.ExcelJS) return res();
+    const s = document.createElement("script"); s.src = "exceljs.min.js"; s.onload = () => res();
+    s.onerror = () => { excelP = null; s.remove(); rej(new Error("không tải được thư viện Excel")); }; document.head.appendChild(s); });
 }
-function excelSheets(m){
-  const x = m.minutes || {};
-  const sec = (title, head, rows) => rows.length ? [[], [title], ...(head ? [head] : []), ...rows] : [];   // mục trống thì không in tiêu đề
+const XL_FILL = {type:"pattern", pattern:"solid", fgColor:{argb:"FFFDE6EE"}};   // hồng nhạt của app
+const XL_WRAP = {wrapText:true, vertical:"top"};
+const XL_FONT = {name:"Calibri", size:11};   // ghi rõ phông: chữ đậm mà thiếu tên phông thì mỗi app Excel hiện một kiểu
+const xlBold = (size = 11) => ({...XL_FONT, size, bold:true});
+// Căn một ô: chữ tự xuống dòng; cột số thứ tự (ô chứa số) căn theo `num` để không dính sát cột bên cạnh
+const xlAlign = (c, num) => { c.alignment = typeof c.value === "number" ? {...XL_WRAP, horizontal:num} : XL_WRAP; };
+// Ô gộp không tự giãn chiều cao trong Excel, nên phải ước lượng số dòng theo độ rộng (tính dư ra một chút)
+const xlHeight = (text, widthChars) => Math.min(400, 16 * Math.max(1, Math.ceil(String(text || "").length * 1.2 / widthChars)));
+function excelMinutesSheet(wb, m){
+  const x = m.minutes || {}, W = [16,40,50,16,35], all = W.reduce((a,b) => a + b, 0);
+  const ws = wb.addWorksheet("Biên bản"); ws.columns = W.map(w => ({width:w}));
+  const span = (row, from, text) => { ws.mergeCells(row.number, from, row.number, W.length);
+    row.height = xlHeight(text, from === 1 ? all : all - W[0]); row.getCell(from).alignment = XL_WRAP; };
+  const title = ws.addRow(["BIÊN BẢN CUỘC HỌP"]); title.font = xlBold(14); span(title, 1, ""); title.height = 24;
+  const info = (label, value) => { const r = ws.addRow([label, value || ""]); r.getCell(1).font = xlBold(); r.getCell(1).alignment = XL_WRAP; span(r, 2, value); };
+  ws.addRow([]); info("Chủ đề", m.title); info("Ngày họp", fmtDate(m.date)); info("Thời lượng", m.durationText);
+  info("Thành phần", (x.thanh_phan || []).join(", ") || m.people || Object.keys(m.names).map(s => who(m,s)).join(", ")); info("Mục đích", x.muc_dich);
+  const section = t => { ws.addRow([]); const r = ws.addRow([t]); r.font = xlBold(12); span(r, 1, ""); r.height = 20; };
+  // wide: bảng chỉ có 2 cột thì cột thứ hai được gộp cho rộng hết trang
+  const table = (t, head, rows, wide) => { if (!rows.length) return; section(t);   // mục trống thì không in tiêu đề
+    const h = ws.addRow(head); h.font = xlBold(); h.eachCell(c => { c.fill = XL_FILL; c.alignment = XL_WRAP; }); if (wide) ws.mergeCells(h.number, 2, h.number, W.length);
+    for (const v of rows){ const r = ws.addRow(v.map(c => c == null ? "" : c)); r.eachCell(c => xlAlign(c, "left")); if (wide) span(r, 2, v[1]); } };
+  section("TÓM TẮT"); const sum = ws.addRow([x.tom_tat || "(Chưa tạo biên bản)"]); span(sum, 1, x.tom_tat);
+  table("CÁC ĐIỂM CHÍNH", ["STT","Chủ đề","Nội dung chính","Ý kiến/kết luận"], (x.diem_chinh || []).map((d,i) => [i+1, d.chu_de, d.noi_dung, d.ket_luan]));
+  table("QUYẾT ĐỊNH", ["STT","Quyết định"], (x.quyet_dinh || []).map((d,i) => [i+1, d]), true);
   const cx = (x.can_xac_nhan || []).map(d => typeof d === "string" ? {noi_dung:d} : d);
-  const r1 = [["BIÊN BẢN CUỘC HỌP"], [], ["Chủ đề", m.title], ["Ngày họp", fmtDate(m.date)], ["Thời lượng", m.durationText],
-    ["Thành phần", (x.thanh_phan || []).join(", ") || m.people || Object.keys(m.names).map(s => who(m,s)).join(", ")], ["Mục đích", x.muc_dich || ""],
-    [], ["TÓM TẮT"], [x.tom_tat || "(Chưa tạo biên bản)"],
-    ...sec("CÁC ĐIỂM CHÍNH", ["STT","Chủ đề","Nội dung chính","Ý kiến/kết luận"], (x.diem_chinh || []).map((d,i) => [i+1, d.chu_de, d.noi_dung, d.ket_luan])),
-    ...sec("QUYẾT ĐỊNH", ["STT","Quyết định"], (x.quyet_dinh || []).map((d,i) => [i+1, d])),
-    ...sec("CẦN XÁC NHẬN LẠI", ["STT","Điểm cần xác nhận","Thời điểm","Trạng thái","Thông tin đúng"],
-      cx.map((d,i) => [i+1, d.noi_dung, d.thoi_diem || "", d.ok ? (d.applied ? "Đã xác nhận, đã cập nhật" : "Đã xác nhận") : "Chưa xác nhận", d.sua || ""])),
-    ...sec("LỊCH SỬ CHỈNH SỬA", ["Thời gian","Nội dung"], (m.lich_su || []).flatMap(e => (e.thay_doi || []).map(t => [e.luc, t])))];
-  return [
-    ["Biên bản", r1, [16,40,50,16,35]],
-    ["Việc cần theo dõi", [["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
-      ...(x.viec_theo_doi || []).map((d,i) => [i+1, d.cong_viec, d.nguoi_phu_trach, d.han, d.uu_tien, d.xong ? "Đã xong" : "Chưa làm", d.ghi_chu])], [5,45,20,16,12,12,30]],
-    ["Kế hoạch tiếp theo", [["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
-      ...(x.ke_hoach || []).map((d,i) => [i+1, d.noi_dung, d.thoi_gian, d.ghi_chu])], [5,50,20,30]],
-    ["Lời thoại", [["Thời điểm","Người nói","Nội dung"], ...m.utts.map(u => [hms(u.a/1000), who(m,u.s), u.t])], [10,18,90]]
-  ];
+  table("CẦN XÁC NHẬN LẠI", ["STT","Điểm cần xác nhận","Thông tin đúng","Thời điểm","Trạng thái"],
+    cx.map((d,i) => [i+1, d.noi_dung, d.sua || "", d.thoi_diem || "", d.ok ? (d.applied ? "Đã xác nhận, đã cập nhật" : "Đã xác nhận") : "Chưa xác nhận"]));
+  table("LỊCH SỬ CHỈNH SỬA", ["Thời gian","Nội dung"], (m.lich_su || []).flatMap(e => (e.thay_doi || []).map(t => [e.luc, t])), true);
 }
-function exportExcel(m){
-  const wb = XLSX.utils.book_new();
-  for (const [name, rows, cols] of excelSheets(m)){ const ws = XLSX.utils.aoa_to_sheet(rows); ws["!cols"] = cols.map(w => ({wch:w})); XLSX.utils.book_append_sheet(wb, ws, name); }
-  const slug = (m.title || "cuoc-hop").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
-  XLSX.writeFile(wb, `BienBan_${m.date || "ngay"}_${slug}.xlsx`); toast("Đang mở file Excel…");
+function excelTableSheet(wb, name, widths, head, rows){
+  const ws = wb.addWorksheet(name, {views:[{state:"frozen", ySplit:1}]}); ws.columns = widths.map(w => ({width:w}));   // cố định dòng tiêu đề
+  const h = ws.addRow(head); h.font = xlBold(); h.eachCell(c => { c.fill = XL_FILL; c.alignment = XL_WRAP; });
+  for (const v of rows) ws.addRow(v.map(c => c == null ? "" : c)).eachCell(c => xlAlign(c, "center"));
 }
-$("btnExcel").onclick = () => { const m = S.cur;
-  if (window.XLSX) return exportExcel(m);   // đã tải sẵn: xuất ngay trong thao tác bấm (iPhone cần vậy để cho tải file)
-  loadXLSX().then(() => exportExcel(m), () => { $("minErr").textContent = "Chưa tải được thư viện Excel. Kiểm tra mạng rồi bấm lại."; }); };
+async function exportExcel(m){
+  await loadExcel(); const x = m.minutes || {};
+  const wb = new ExcelJS.Workbook(); wb.created = new Date();
+  excelMinutesSheet(wb, m);
+  excelTableSheet(wb, "Đầu việc", [5,45,20,16,12,12,30], ["STT","Công việc","Người phụ trách","Hạn hoàn thành","Ưu tiên","Trạng thái","Ghi chú"],
+    (x.viec_theo_doi || []).map((d,i) => [i+1, d.cong_viec, d.nguoi_phu_trach, d.han, d.uu_tien, d.xong ? "Đã xong" : "Chưa làm", d.ghi_chu]));
+  excelTableSheet(wb, "Kế hoạch tiếp theo", [5,50,20,30], ["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
+    (x.ke_hoach || []).map((d,i) => [i+1, d.noi_dung, d.thoi_gian, d.ghi_chu]));
+  excelTableSheet(wb, "Lời thoại", [10,18,90], ["Thời điểm","Người nói","Nội dung"], m.utts.map(u => [hms(u.a/1000), who(m,u.s), u.t]));
+  const blob = new Blob([await wb.xlsx.writeBuffer()], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const slug = (m.title || "cuoc-hop").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `BienBan_${m.date || "ngay"}_${slug}.xlsx`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+$("btnExcel").onclick = () => { $("minErr").textContent = "";
+  exportExcel(S.cur).then(() => toast("Đang mở file Excel…"),
+    e => { $("minErr").textContent = "Chưa tạo được file Excel: " + e.message + ". Kiểm tra mạng rồi bấm lại."; }); };
+
+/* ---------- Bản mới và chạy khi không có mạng ---------- */
+// sw.js giữ một bản của app trên máy (mở được khi mất mạng) và luôn hỏi máy chủ trước, nên lần mở sau khi phát hành là có bản mới.
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+// App đang mở sẵn thì không tự đổi sang bản mới: hỏi máy chủ (nhiều nhất 15 phút một lần) và mời người dùng bấm cập nhật.
+async function checkUpdate(){
+  if (S.updAt && Date.now() - S.updAt < 15*60*1000) return; S.updAt = Date.now();
+  try{
+    const r = await fetch(location.pathname, {cache:"no-store"}); if (!r.ok) return;
+    const v = ((await r.text()).match(/APP_VERSION = "([^"]+)"/) || [])[1];
+    if (v && v !== APP_VERSION){ S.newVer = v; $("updBar").textContent = `Có bản mới (${v}). Bấm để cập nhật.`; $("updBar").hidden = false; }
+  }catch(e){}
+}
+$("updBar").onclick = () => { if (S.busy || S.rec) return toast("Đang xử lý, hãy cập nhật sau khi xong");
+  location.replace(location.pathname + "?v=" + encodeURIComponent(S.newVer)); };   // "?v=" ép trình duyệt tải bản mới thay vì bản nó đang giữ
 
 /* ---------- Khởi động ---------- */
 $("appVer").textContent = "Phiên bản " + APP_VERSION;
 if (!window.crypto || !crypto.subtle) document.body.innerHTML = "<p style='padding:20px'>Trình duyệt này không hỗ trợ mã hoá. Hãy mở bằng Safari trên iPhone (iOS 15 trở lên).</p>";
-else initLock();
+else { initLock(); checkUpdate(); }
 </script>
 </body>
 </html>
