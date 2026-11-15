@@ -43,8 +43,9 @@
   Mọi lượt ghi tài liệu gốc phải đi qua `kvSave`/`kvCommit` (một hàng đợi) để lượt ghi cũ không đè thông tin mở khoá mới.
 - Gọi Claude: `callSample`, mỗi lượt tối đa 256 KiB (tính theo byte). Họp dài hơn thì `directChunkChars` cắt thành vài phần lớn rồi gộp, dùng lại luồng của chế độ `aai`.
 - Những thứ khung Artifact cấm, đã có đường thay: đọc bộ nhớ tạm (người dùng tự dán vào ô), tự tải file (`downloads`), service worker, `confirm()`, gọi ra máy chủ ngoài.
-- Gói chuyển cuộc họp từ web sang Claude: chuỗi `BBH1:` + gzip + base64 (hoặc `BBH0:` + JSON khi máy không có CompressionStream), xem `packMeeting`/`unpackMeeting`.
-  `unpackMeeting` chỉ nhận các trường đã biết và ép kiểu từng trường.
+- Gói chuyển cuộc họp từ web sang Claude: chuỗi `BBH1~` + gzip + base64 (hoặc `BBH0~` + JSON khi máy không có CompressionStream), xem `packMeeting`/`unpackMeeting`.
+  `unpackMeeting` chỉ nhận các trường đã biết và ép kiểu từng trường. Bài học từ máy thật: iPhone coi chuỗi dạng `TÊN:...` là một địa chỉ và đổi `TÊN` thành chữ thường
+  khi dán, nên tiền tố dùng `~`, và lúc nhận thì chấp nhận cả hoa lẫn thường, cả `:` lẫn `~`. Thứ gì đi qua bộ nhớ tạm của iPhone đều phải đọc "dễ tính" như vậy.
 
 ## Service worker (`sw.js`)
 - Việc của nó: giữ một bản của app trên máy để mở được khi mất mạng. Luôn hỏi máy chủ trước (`cache: "no-cache"`), chỉ dùng bản đã lưu khi không có mạng.

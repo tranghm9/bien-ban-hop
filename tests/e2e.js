@@ -409,12 +409,13 @@ const tests = {
     const w = await open(), wp = w.page; await w.firstRun(); await w.process({title:'Họp sang Claude', people:'anh Minh, chị Lan'});
     await wp.fill('#name_A', 'Anh Minh'); await wp.click('#btnSaveNames'); const n = await w.ev(() => S.cur.utts.length);
     await wp.click('.seg [data-tab="min"]'); await wp.click('#tab_min button:has-text("Sao chép sang Claude")'); await wp.waitForTimeout(400); const pkg = await w.clip();
-    ok(pkg.startsWith('BBH1:') && pkg.length < 4000 && !pkg.includes('rà soát'), 'trang web sao chép gói nén: ' + pkg.slice(0, 20) + '… dài ' + pkg.length);
+    ok(pkg.startsWith('BBH1~') && pkg.length < 4000 && !pkg.includes('rà soát'), 'trang web sao chép gói nén, tiền tố không giống một địa chỉ web: ' + pkg.slice(0, 20) + '… dài ' + pkg.length);
     ok(!(await w.shown('#btnImport')) && !(await w.shown('#impText')) && !(await w.shown('#btnToClaude')), 'trang web không hiện phần chỉ dành cho Claude; chưa có biên bản thì nút sao chép chỉ nằm trong thẻ "Chưa có biên bản"'); w.done();
     const c = await open({ctx: w.ctx, claude: true}), p = c.page; await c.firstRunClaude();
     ok(await c.ev(() => S.writer) === 'direct' && !(await c.shown('#pickBox')) && !(await c.shown('#btnProcess')) && !(await c.shown('#btnToClaude')) && await c.shown('#btnNew'), 'trong Claude: không có ghi âm, không đòi khoá API');
-    await c.importPkg(pkg);
-    ok(await c.ev(() => S.cur.utts.length) === n && await c.ev(() => S.cur.names.A) === 'Anh Minh' && await c.visible('#tab_spk') && (await p.textContent('#vTitle')) === 'Họp sang Claude', 'cuộc họp sang đủ lời thoại, tên người nói');
+    // Gói do bản 2026.11.15.2 tạo có tiền tố "BBH1:"; iPhone coi đó là một địa chỉ và đổi thành "bbh1:" khi dán. Phải nhận được cả dạng này.
+    await c.importPkg('bbh1:' + pkg.slice(5));
+    ok(await c.ev(() => S.cur.utts.length) === n && await c.ev(() => S.cur.names.A) === 'Anh Minh' && await c.visible('#tab_spk') && (await p.textContent('#vTitle')) === 'Họp sang Claude', 'cuộc họp sang đủ lời thoại, tên người nói (kể cả khi iPhone đổi tiền tố thành chữ thường)');
     await p.click('.seg [data-tab="min"]'); await p.click('#btnMinutes'); await c.until(() => !!S.cur.minutes, 'Claude viết biên bản trong trang', 40, 100);
     ok(c.prompts.length === 1 && c.prompts[0].includes('LỜI THOẠI:') && c.prompts[0].includes('Anh Minh: ') && c.prompts[0].includes('NGÔN NGỮ CỦA BIÊN BẢN') && c.prompts[0].includes('không đặt trong khối mã'), 'gửi Claude một lần, đủ lời thoại và quy tắc');
     ok(!(await c.visible('#claudeBox')) && await c.ev(() => S.cur.minutes.tom_tat) === MINUTES.tom_tat, 'không cần sao chép – dán');
@@ -455,7 +456,7 @@ const tests = {
 
   'trong Claude: đổi mã PIN chỉ ghi một tài liệu; xoá toàn bộ thì kho sạch': async () => {
     const w = await open(), wp = w.page; await w.firstRun(); await w.process({title:'Họp đổi mã trong Claude'}); await w.claudeGen();
-    await wp.click('#btnToClaude'); await wp.waitForTimeout(400); const pkg = await w.clip(); ok(pkg.startsWith('BBH1:'), 'cuộc họp đã có biên bản cũng sao chép sang được'); w.done();
+    await wp.click('#btnToClaude'); await wp.waitForTimeout(400); const pkg = await w.clip(); ok(pkg.startsWith('BBH1~'), 'cuộc họp đã có biên bản cũng sao chép sang được'); w.done();
     const c = await open({ctx: w.ctx, claude: true, cdnFail: n => n === 'cdnjs'}), p = c.page; await c.firstRunClaude(); await c.importPkg(pkg);
     ok(await c.ev(() => S.cur.minutes.tom_tat) === MINUTES.tom_tat && await c.visible('#tab_min') && !(await c.visible('#tab_spk')), 'biên bản viết ở trang web đi theo sang Claude');
     await p.click('#btnExcel'); await c.until(() => document.getElementById('toast').textContent.includes('Excel'), 'lưu Excel khi cdnjs không vào được', 20, 100);

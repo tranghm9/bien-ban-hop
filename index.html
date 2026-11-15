@@ -377,7 +377,7 @@ details[open].card summary::after{content:"－"}
         <li>Khi đã có lời thoại, bấm <b>Sao chép sang Claude</b>.</li>
         <li>Quay lại đây, chạm giữ vào ô bên dưới, chọn <b>Dán</b>, rồi bấm <b>Thêm cuộc họp</b>.</li>
       </ol>
-      <textarea id="impText" placeholder="Chạm giữ vào đây rồi chọn Dán" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      <textarea id="impText" placeholder="Chạm giữ vào đây rồi chọn Dán" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
       <p class="muted">Ghi âm phải làm ở trang web vì trang trong Claude không được phép dùng micro và không gửi được file ghi âm đi chuyển thành chữ.</p>
     </div>
     <div id="pickBox" class="stack web-only">
@@ -486,7 +486,7 @@ details[open].card summary::after{content:"－"}
 
 <script>
 "use strict";
-const APP_VERSION = "2026.11.15.2";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
+const APP_VERSION = "2026.11.15.3";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const CLAUDE_APP = "https://claude.ai/artifact/MRA8fqXNXRMcV7jKXezEcb";   // bản của app chạy trong Claude (trang riêng tư, chỉ chủ tài khoản mở được)
@@ -1607,19 +1607,22 @@ $("btnCopy").onclick = async () => { const m = S.cur;
   catch(e){ $("minErr").textContent = "Điện thoại chưa cho sao chép tự động: " + e.message; } };
 
 /* ---------- Chuyển cuộc họp từ trang web sang app Claude ---------- */
-// Gói chuyển là một chuỗi chữ đi qua bộ nhớ tạm: "BBH1:" + gzip + base64 (gọn hơn 3–4 lần), hoặc "BBH0:" + JSON cho máy chưa có CompressionStream.
+// Gói chuyển là một chuỗi chữ đi qua bộ nhớ tạm: "BBH1~" + gzip + base64 (gọn hơn 3–4 lần), hoặc "BBH0~" + JSON cho máy chưa có CompressionStream.
+// Dấu sau tiền tố là "~" chứ không phải ":" vì iPhone coi chuỗi dạng "BBH1:..." là một địa chỉ (như "http:...") và tự đổi phần đầu thành chữ thường khi dán.
+// Lúc nhận, tiền tố được chấp nhận cả hoa lẫn thường, cả ":" lẫn "~" (gói do bản 2026.11.15.2 tạo ra dùng ":").
 async function packMeeting(m){
   const json = JSON.stringify({bbh:1, m}, (k, v) => k[0] === "_" || k === "cho" || k === "truoc" || k === "lastChanges" ? undefined : v);
-  return CAN_GZIP ? "BBH1:" + b64(await gzip(te.encode(json))) : "BBH0:" + json;
+  return CAN_GZIP ? "BBH1~" + b64(await gzip(te.encode(json))) : "BBH0~" + json;
 }
 async function unpackMeeting(text){
-  const t = String(text || "").trim(); let json;
-  if (t.startsWith("BBH1:")){
+  const t = String(text || "").trim(), head = t.match(/^bbh([01])\s*[:~]\s*/i); let json;
+  if (!head) throw new Error("đây không phải cuộc họp sao chép từ trang chuyển giọng nói. Ở trang đó, bấm Sao chép sang Claude rồi dán vào đây");
+  const body = t.slice(head[0].length);
+  if (head[1] === "1"){
     if (!CAN_GZIP) throw new Error("app Claude trên máy này quá cũ để đọc gói nén, hãy cập nhật iPhone hoặc app Claude");
-    try{ json = td.decode(await gunzip(unb64(t.slice(5).replace(/\s+/g, "")))); }
+    try{ json = td.decode(await gunzip(unb64(body.replace(/\s+/g, "")))); }
     catch(e){ throw new Error("phần vừa dán bị thiếu hoặc hỏng. Hãy bấm lại Sao chép sang Claude ở trang web rồi dán lại"); }
-  } else if (t.startsWith("BBH0:")) json = t.slice(5);
-  else throw new Error("đây không phải cuộc họp sao chép từ trang chuyển giọng nói. Ở trang đó, bấm Sao chép sang Claude rồi dán vào đây");
+  } else json = body;
   let m; try{ m = JSON.parse(json).m; }catch(e){ throw new Error("phần vừa dán bị thiếu hoặc hỏng"); }
   if (!m || !Array.isArray(m.utts)) throw new Error("gói không có lời thoại");
   // Chỉ nhận các trường đã biết và ép kiểu từng trường: đây là dữ liệu đi từ ngoài vào
