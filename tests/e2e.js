@@ -119,6 +119,7 @@ const tests = {
     ok(prompt.includes('ĐỊNH DẠNG TRẢ LỜI') && prompt.includes('Anh Minh: ') && prompt.includes('Cấu trúc JSON'), 'yêu cầu phải có định dạng, tên người nói, cấu trúc');
     ok(!prompt.includes('không markdown') && !prompt.includes('không đặt trong khối mã'), 'yêu cầu cho Claude không được vừa cấm vừa đòi khối mã');
     ok(/Ngày họp: \d\d\/\d\d\/\d{4} \((thứ \S+|Chủ nhật)\)/.test(prompt) && prompt.includes('ngày cụ thể'), 'yêu cầu có thứ trong tuần của ngày họp để tính hạn');
+    ok(prompt.includes('NGÔN NGỮ CỦA BIÊN BẢN') && prompt.includes('deadline → hạn chót') && prompt.includes('văn phong công sở') && !prompt.includes('giữ thuật ngữ tiếng Anh'), 'yêu cầu dặn viết thống nhất bằng tiếng Việt, dịch từ tiếng Anh');
     await p.click('#cbPaste'); await p.waitForTimeout(300);   // bộ nhớ tạm vẫn là yêu cầu
     ok((await p.textContent('#minErr')).includes('vẫn là yêu cầu') && await t.ev(() => S.cur.minutes === null), 'dán nhầm yêu cầu phải bị chặn, không tạo biên bản rác');
     await t.setClip(JSON.stringify({bien_ban: MINUTES})); await p.click('#cbPaste'); await t.until(() => !!S.cur.minutes, 'nhập kết quả bọc trong bien_ban');
@@ -144,7 +145,7 @@ const tests = {
     await p.fill('#confirmCard .cx input', '30/11/2026'); await p.clock.fastForward(800); await p.waitForTimeout(100);
     await p.click('#btnBack'); await p.click('.mcard'); ok(await p.inputValue('#confirmCard .cx input') === '30/11/2026', 'chữ gõ dở được giữ');
     await p.click('#confirmCard .cx button.primary'); await p.waitForTimeout(150); ok((await p.textContent('#btnApply')).includes('(1)') && await t.visible('#btnApply'), 'có 1 xác nhận chờ cập nhật');
-    await p.click('#btnApply'); await p.waitForTimeout(150); const ap = await t.clip(); ok(ap.includes('30/11/2026') && ap.includes('ĐỊNH DẠNG TRẢ LỜI'), 'yêu cầu cập nhật có nội dung xác nhận');
+    await p.click('#btnApply'); await p.waitForTimeout(150); const ap = await t.clip(); ok(ap.includes('30/11/2026') && ap.includes('ĐỊNH DẠNG TRẢ LỜI') && ap.includes('văn phong công sở') && !ap.includes('LỜI THOẠI:'), 'yêu cầu cập nhật có nội dung xác nhận, quy tắc ngôn ngữ, không kèm lời thoại');
     await p.reload(); await t.unlock(); await p.click('.mcard');   // app bị tải lại giữa chừng (iPhone hay làm vậy khi chuyển app)
     ok(await t.visible('#claudeBox') && (await t.clip()) === ap, 'mở lại vẫn thấy khung chờ Claude, không tự ghi đè bộ nhớ tạm');
     const upd = JSON.parse(JSON.stringify(MINUTES)); delete upd.can_xac_nhan; upd.viec_theo_doi[0].han = '30/11/2026';
@@ -281,6 +282,28 @@ const tests = {
     // Biên bản còn nhãn ở chỗ chưa được hỏi: không tự xoá, phải nhờ Claude
     await t.ev(() => { S.cur.minutes.ke_hoach[0].thoi_gian = 'Tuần sau [cần xác nhận]'; }); await p.click('#btnApply'); await p.waitForTimeout(200);
     ok(await t.visible('#claudeBox') && await t.ev(() => S.cur.cho && S.cur.cho.kind === 'apply' && S.cur.minutes.ke_hoach[0].thoi_gian.includes('[cần xác nhận]')), 'còn nhãn chưa được hỏi thì chuyển cho Claude'); await t.close(); },
+
+  'thống nhất ngôn ngữ biên bản đã có: chỉ gửi biên bản, giữ đầu việc đã xong và xác nhận, hoàn tác được': async () => { const t = await open(), p = t.page; await t.firstRun();
+    await t.process({title:'Họp lẫn tiếng Anh'}); await t.claudeGen();
+    await p.click('.seg [data-tab="task"]'); await p.click('#tab_task .task >> nth=1 >> button.check'); await p.waitForTimeout(100);   // đánh dấu đầu việc thứ hai đã xong
+    await p.click('.seg [data-tab="min"]'); await p.click('#confirmCard .cx button.primary'); await p.waitForTimeout(150);            // xác nhận "Đúng rồi", chưa cập nhật
+    await p.click('#btnLang'); await p.waitForTimeout(150); const pr = await t.clip();
+    ok(pr.includes('BIÊN BẢN HIỆN TẠI') && pr.includes('deadline → hạn chót') && pr.includes('ĐỊNH DẠNG TRẢ LỜI') && pr.includes(MINUTES.tom_tat), 'yêu cầu có biên bản hiện tại và quy tắc ngôn ngữ');
+    ok(!pr.includes('LỜI THOẠI:') && !pr.includes('rà soát tiến độ kế hoạch'), 'yêu cầu không gửi lại lời thoại');
+    ok((await p.textContent('#cbTitle')).includes('Thống nhất ngôn ngữ') && (await p.textContent('#cbCopyState')).includes('không kèm lời thoại'), 'khung Claude nói rõ đang làm gì');
+    const vi = JSON.parse(JSON.stringify(MINUTES)); vi.tom_tat = 'Thống nhất gửi báo cáo cuối tháng.'; vi.diem_chinh[0] = {chu_de:'Báo cáo', noi_dung:'Báo cáo xong 70%.', ket_luan:'Gửi bản nháp trước thứ sáu'};
+    vi.viec_theo_doi[0].cong_viec = 'Gửi báo cáo'; vi.viec_theo_doi[1].xong = false; vi.can_xac_nhan = ['Cuối tháng (hạn chót) là ngày nào?'];   // Claude trả về "xong" cũ: bản trên máy phải thắng
+    await t.setClip(fenced({bien_ban: vi, thay_doi:['report → báo cáo', 'draft → bản nháp']})); await p.click('#cbPaste'); await t.until(() => S.cur.minutes.tom_tat.includes('báo cáo'), 'nhập bản đã thống nhất ngôn ngữ');
+    ok(await t.ev(() => { const x = S.cur.minutes, q = x.can_xac_nhan[0];
+      return x.viec_theo_doi[0].cong_viec === 'Gửi báo cáo' && x.viec_theo_doi[0].han.includes('[cần xác nhận]') && x.viec_theo_doi[1].xong === true
+        && q.ok === true && q.applied !== true && q.noi_dung.includes('hạn chót') && q.thoi_diem === '00:00:10' && !S.cur.cho; }), 'lời văn được đổi; đầu việc đã xong, trạng thái xác nhận và mốc giờ giữ nguyên');
+    ok(await t.ev(() => S.cur.lich_su[S.cur.lich_su.length - 1].thay_doi.join('|')) === 'report → báo cáo|draft → bản nháp' && (await p.textContent('#btnApply')).includes('(1)'), 'ghi lịch sử; xác nhận đang chờ vẫn còn');
+    await p.click('#tab_min button:has-text("Hoàn tác")'); await p.waitForTimeout(200); ok(await t.ev(() => S.cur.minutes.tom_tat) === MINUTES.tom_tat, 'hoàn tác về bản trước');
+    // Đang chờ Claude mà người dùng sửa nội dung: huỷ yêu cầu đang chờ, để kết quả cũ không ghi đè chỗ vừa sửa
+    await p.click('#btnLang'); await p.waitForTimeout(150); ok(await t.visible('#claudeBox') && await t.ev(() => S.cur.cho.kind) === 'lang', 'đang chờ kết quả thống nhất ngôn ngữ');
+    await p.click('.seg [data-tab="task"]'); await p.click('#tab_task .task >> nth=0 >> button:has-text("Sửa")');
+    await p.fill('#tab_task .task >> nth=0 >> input[data-k="ghi_chu"]', 'vừa sửa'); await p.click('#tab_task .task >> nth=0 >> button:has-text("Lưu")'); await p.waitForTimeout(150);
+    ok(await t.ev(() => !S.cur.cho && S.cur.minutes.viec_theo_doi[0].ghi_chu === 'vừa sửa') && !(await t.visible('#claudeBox')), 'sửa nội dung thì yêu cầu đang chờ bị huỷ'); await t.close(); },
 
   'một người bị tách thành hai nhãn: gõ cùng tên thì gộp': async () => { const t = await open(), p = t.page; await t.firstRun(); await t.process({title:'Họp bốn nhãn'});
     ok((await p.textContent('#vChips')).includes('4 người nói'), 'ban đầu 4 nhãn');

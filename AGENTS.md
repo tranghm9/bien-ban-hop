@@ -35,7 +35,7 @@
   Số vòng nằm ở `bb_kdf`: 600.000 cho mã PIN tạo hoặc đổi từ bản 2026.11.14.2; không có `bb_kdf` nghĩa là dữ liệu cũ, 250.000 vòng (vẫn phải mở được).
 - Cuộc họp `m`: `id, created, title, date, people, speakers, utts[{s,t,a,b}], names{A:"tên"}, durationText, model, sttOpts[], minutes, lich_su[], lastChanges, truoc, cho`.
   - `minutes`: `chu_de, muc_dich, thanh_phan[], tom_tat, diem_chinh[], quyet_dinh[], viec_theo_doi[{..., xong}], ke_hoach[], can_xac_nhan[{noi_dung, thoi_diem, ok, sua, applied, nhap}]`.
-  - `cho = {kind: "gen" | "apply", idx[]}`: đang chờ người dùng dán kết quả từ Claude. `truoc`: bản trước đó, để Hoàn tác.
+  - `cho = {kind: "gen" | "apply" | "lang", idx[]}`: đang chờ người dùng dán kết quả từ Claude (viết mới, cập nhật theo xác nhận, thống nhất ngôn ngữ). `truoc`: bản trước đó, để Hoàn tác.
   - `sttOpts`: tuỳ chọn phụ mà AssemblyAI đã nhận (`speaker_options`, `keyterms_prompt`), hiện ở tab Người nói. Hai nhãn người nói được gõ cùng tên được coi là một người (`speakerColors`).
 - localStorage: `bb_salt`, `bb_kdf`, `bb_check`, `bb_cfg` (mã hoá: khoá API, cách viết), `bb_theme`,
   `bb_job` (mã hoá: việc chuyển chữ đang dở, hoặc `{id, del:true}` là bản trên máy chủ còn chờ xoá),
@@ -52,7 +52,8 @@
 5. Commit bằng danh tính mặc định của môi trường (không ghi đè `user.email`). Kho mã công khai.
 6. Mọi chữ hiển thị viết tiếng Việt theo góc nhìn người dùng. Ô nhập phải có cỡ chữ từ 16px (nhỏ hơn thì iPhone tự phóng to trang).
 7. Việc gọi AI có thể chạy nền: khi xong không được tự chuyển màn hình nếu người dùng đang ở màn khác (xem `autoRun`).
-8. Việc nào thay hoặc xoá dữ liệu (tạo lại biên bản, xoá bản trên AssemblyAI, bỏ kết quả đang chờ) phải hỏi lại bằng lần bấm thứ hai.
+8. Biên bản phải thống nhất một ngôn ngữ: tiếng Việt, văn phong công sở, từ tiếng Anh được dịch (trừ tên riêng, chữ viết tắt). Mọi yêu cầu gửi AI có sửa lời văn biên bản phải kèm `LANG_RULES`. Lời thoại thì giữ nguyên như đã nói.
+9. Việc nào thay hoặc xoá dữ liệu (tạo lại biên bản, xoá bản trên AssemblyAI, bỏ kết quả đang chờ) phải hỏi lại bằng lần bấm thứ hai.
 
 ## Giới hạn khi kiểm thử
 - Bộ thử dùng Chromium và AssemblyAI giả lập. Chưa chạy được với khoá AssemblyAI thật trong môi trường đám mây

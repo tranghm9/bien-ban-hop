@@ -135,6 +135,8 @@ button:disabled{opacity:.45;cursor:default;transform:none}
 .bottombar{position:fixed;left:0;right:0;bottom:0;z-index:6;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
   background:linear-gradient(to top,var(--bg) 70%,transparent);display:flex;gap:10px;justify-content:center}
 .bottombar>*{flex:1 1 0;max-width:300px}
+.langbox{display:grid;gap:2px;justify-items:center;text-align:center}
+.langbox .muted{font-size:13.5px}
 #barMeet>*{flex:1 1 auto}   /* nút nào chữ dài hơn thì được rộng hơn, để chữ không bị xuống dòng */
 .fab{border-radius:99px;padding:16px 26px;font-size:16px}
 
@@ -454,7 +456,7 @@ details[open].card summary::after{content:"－"}
 
 <script>
 "use strict";
-const APP_VERSION = "2026.11.14.2";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
+const APP_VERSION = "2026.11.15";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const $ = id => document.getElementById(id);
@@ -1040,10 +1042,17 @@ function transcriptText(m){ return m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u
 const THU = ["Chủ nhật","thứ Hai","thứ Ba","thứ Tư","thứ Năm","thứ Sáu","thứ Bảy"];
 const dateWithDay = d => d ? `${fmtDate(d)} (${THU[new Date(d + "T00:00").getDay()]})` : "(không rõ)";
 const meetingInfo = m => `Thông tin: Chủ đề: ${m.title}. Ngày họp: ${dateWithDay(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
+// Biên bản phải thống nhất một ngôn ngữ: tiếng Việt, văn phong công sở. Dùng chung cho mọi yêu cầu gửi AI.
+const LANG_RULES = `NGÔN NGỮ CỦA BIÊN BẢN: viết toàn bộ bằng tiếng Việt có dấu, văn phong công sở chuyên nghiệp, thống nhất từ đầu đến cuối.
+- Từ, cụm từ, câu tiếng Anh: dịch sang từ tiếng Việt tương ứng thường dùng trong văn bản công sở và giữ đúng nghĩa, ví dụ deadline → hạn chót, report → báo cáo, draft → bản nháp, launch → ra mắt, feedback → phản hồi, update → cập nhật. Mỗi khái niệm chỉ dùng một cách gọi trong cả biên bản.
+- Giữ nguyên, không dịch: tên riêng (người, công ty, phòng ban, sản phẩm, dự án, hệ thống, phần mềm), mã số, và chữ viết tắt quen dùng (KPI, OKR, CRM, AI...).
+- Thuật ngữ chuyên môn chưa có từ tiếng Việt quen dùng: viết nghĩa tiếng Việt, kèm từ gốc trong ngoặc đơn ở lần đầu xuất hiện, ví dụ "bảng theo dõi số liệu (dashboard)"; các lần sau chỉ dùng từ tiếng Việt.
+- Từ tiếng Anh không chắc nghĩa (có thể máy nghe nhầm): giữ từ gốc trong ngoặc đơn và ghi "[cần xác nhận]".
+- Lời nói tiếng Việt kiểu khẩu ngữ: diễn đạt lại bằng từ ngữ trang trọng, ngắn gọn, đúng ý người nói, không thêm bớt nội dung.`;
 const INSTR = `Bạn là thư ký cuộc họp chuyên nghiệp. Dưới đây là lời thoại cuộc họp do máy chép từ ghi âm (tiếng Việt, xen lẫn tiếng Anh), đã chia theo người nói.
 Lưu ý: bản chép có thể sai chính tả, nghe nhầm thuật ngữ tiếng Anh, hoặc gán nhầm người nói ở vài câu. Hãy suy luận theo ngữ cảnh để hiểu đúng ý. Không bịa thông tin không có trong cuộc họp. Chi tiết không chắc chắn (tên, con số, hạn chót) ghi "[cần xác nhận]".
 Hạn hoặc mốc thời gian nói kiểu tương đối (ví dụ "thứ sáu tuần này", "cuối tháng") thì ghi kèm ngày cụ thể tính từ ngày họp, ví dụ "thứ sáu tuần này (20/11/2026)". Nếu không tính chắc được thì giữ nguyên lời nói.
-Viết bằng tiếng Việt có dấu, giữ thuật ngữ tiếng Anh chuyên môn khi cần.`;
+${LANG_RULES}`;
 const SCHEMA = `Cấu trúc JSON của biên bản:
 {"chu_de":"","muc_dich":"","thanh_phan":["tên"],"tom_tat":"3-5 câu",
 "diem_chinh":[{"chu_de":"","noi_dung":"","ket_luan":""}],
@@ -1070,6 +1079,7 @@ function applyPrompt(m, items){
 Hãy cập nhật biên bản:
 - Với điểm có "thong_tin_dung": thay thông tin cũ bằng thông tin đúng ở mọi chỗ liên quan (tóm tắt, điểm chính, quyết định, đầu việc: người phụ trách / hạn, kế hoạch).
 - Với điểm được xác nhận ĐÚNG: giữ nội dung, chỉ bỏ ghi chú "[cần xác nhận]" liên quan.
+- Biên bản viết thống nhất bằng tiếng Việt, văn phong công sở: nếu thông tin đúng có từ tiếng Anh thông dụng thì dùng từ tiếng Việt tương ứng; giữ nguyên tên riêng, mã số, chữ viết tắt.
 - Không thay đổi bất kỳ nội dung nào khác. Giữ nguyên cấu trúc, thứ tự và trường "xong" của từng đầu việc.
 Cấu trúc JSON cần trả về: {"bien_ban":{...cùng cấu trúc như biên bản đầu vào...},"thay_doi":["mô tả ngắn từng chỗ đã sửa, ví dụ: Hạn việc 'Soạn memo' → 25/11/2026"]}
 
@@ -1078,6 +1088,18 @@ ${JSON.stringify(bb)}
 
 CÁC XÁC NHẬN:
 ${JSON.stringify(xn)}`;
+}
+// Thống nhất ngôn ngữ cho biên bản ĐÃ CÓ (ví dụ biên bản viết trước khi có quy tắc ngôn ngữ): chỉ gửi biên bản, không gửi lại lời thoại nên tốn rất ít hạn mức
+const LANG_DONE = "Đã thống nhất ngôn ngữ của biên bản.";
+function langPrompt(m){
+  const bb = JSON.parse(JSON.stringify(m.minutes, NO_SAVE)); bb.can_xac_nhan = confirmItems(m).map(q => q.noi_dung || "");
+  return `Bạn là thư ký cuộc họp. Dưới đây là một biên bản (JSON) còn lẫn từ tiếng Anh hoặc cách diễn đạt chưa thống nhất. Hãy viết lại lời văn theo quy tắc sau.
+${LANG_RULES}
+- Chỉ sửa cách diễn đạt. Không thêm, bớt hay đổi ý. Giữ nguyên mọi con số, ngày tháng, tên người, nhãn "[cần xác nhận]", trường "xong", giá trị "uu_tien", cấu trúc, số lượng và thứ tự các mục (kể cả "can_xac_nhan").
+Cấu trúc JSON cần trả về: {"bien_ban":{...cùng cấu trúc như biên bản đầu vào...},"thay_doi":["tóm tắt các từ đã đổi, ví dụ: deadline → hạn chót"]}
+
+BIÊN BẢN HIỆN TẠI:
+${JSON.stringify(bb)}`;
 }
 
 /* ---------- Nhận kết quả từ AI ---------- */
@@ -1110,15 +1132,20 @@ function finishGen(m, obj){
   keepUndo(m); m.minutes = obj; m.lich_su = [];
   if (m.truoc) m.lastChanges = {luc: stamp(), thay_doi:["Đã thay toàn bộ bằng biên bản mới do AI viết lại."]}; else delete m.lastChanges;
 }
-function finishApply(m, res, idx){
+// Nhận biên bản do AI sửa lại: theo các xác nhận (idx), hoặc thống nhất ngôn ngữ (langNote).
+// Những gì người dùng tự đánh dấu trên máy (đầu việc đã xong, điểm đã xác nhận) luôn lấy theo bản trên máy, không theo bản AI trả về.
+function finishApply(m, res, idx, langNote){
   const nb = res && typeof res.bien_ban === "object" && res.bien_ban ? res.bien_ban : (res && res.tom_tat ? res : null);
   if (!nb || !nb.tom_tat) throw new Error("kết quả thiếu nội dung biên bản");
   keepUndo(m);
-  const old = m.minutes, oldTasks = old.viec_theo_doi || [];
-  (nb.viec_theo_doi || []).forEach((t,i) => { if (t.xong == null && oldTasks[i]) t.xong = oldTasks[i].xong; });
-  nb.can_xac_nhan = confirmItems(m); const items = idx.map(i => nb.can_xac_nhan[i]).filter(Boolean); items.forEach(q => q.applied = true);
+  const oldTasks = m.minutes.viec_theo_doi || [], tasks = nb.viec_theo_doi || [];
+  tasks.forEach((t,i) => { if (oldTasks[i] && (tasks.length === oldTasks.length || t.xong == null)) t.xong = oldTasks[i].xong; });
+  const cx = confirmItems(m), got = nb.can_xac_nhan;
+  if (langNote && Array.isArray(got) && got.length === cx.length)   // chỉ nhận lại lời văn của từng điểm, giữ trạng thái xác nhận
+    got.forEach((g,i) => { const t = typeof g === "string" ? g : g && g.noi_dung; if (t) cx[i].noi_dung = String(t); });
+  nb.can_xac_nhan = cx; const items = idx.map(i => cx[i]).filter(Boolean); items.forEach(q => q.applied = true);
   const changes = Array.isArray(res.thay_doi) ? res.thay_doi.filter(Boolean).map(String) : [];
-  m.minutes = nb; (m.lich_su ||= []).push({luc: stamp(), thay_doi: changes.length ? changes : items.map(q => "Xác nhận: " + q.noi_dung)});
+  m.minutes = nb; (m.lich_su ||= []).push({luc: stamp(), thay_doi: changes.length ? changes : langNote ? [langNote] : items.map(q => "Xác nhận: " + q.noi_dung)});
   m.lastChanges = m.lich_su[m.lich_su.length - 1];
 }
 
@@ -1126,7 +1153,7 @@ function finishApply(m, res, idx){
 // Trạng thái "đang chờ kết quả từ Claude" được lưu cùng cuộc họp (m.cho) nên không mất khi app bị tải lại hoặc tự khoá.
 function claudePrompt(m){
   const c = m.cho; if (!c) return "";
-  return c.kind === "gen" ? genPrompt(m) : applyPrompt(m, c.idx.map(i => confirmItems(m)[i]).filter(Boolean)) + CLAUDE_FMT;
+  return c.kind === "gen" ? genPrompt(m) : (c.kind === "lang" ? langPrompt(m) : applyPrompt(m, c.idx.map(i => confirmItems(m)[i]).filter(Boolean))) + CLAUDE_FMT;
 }
 function copyText(t){
   $("cbPrompt").value = t;
@@ -1134,10 +1161,12 @@ function copyText(t){
     .catch(() => { $("cbPrompt").hidden = false; $("cbPrompt").focus(); $("cbPrompt").select();
       toast("Chưa tự sao chép được: giữ tay lên ô chữ → Chọn tất cả → Sao chép"); return false; });
 }
+const CB_TITLE = {gen:"Viết biên bản bằng Claude", apply:"Cập nhật biên bản bằng Claude", lang:"Thống nhất ngôn ngữ bằng Claude"};
+const copiedNote = c => c.kind === "gen" ? "Đã sao chép yêu cầu và lời thoại." : "Đã sao chép yêu cầu và biên bản (không kèm lời thoại).";
 function renderClaudeBox(m, justCopied){
   const c = m.cho; $("claudeBox").hidden = !c; if (!c) return;
-  $("cbTitle").textContent = c.kind === "gen" ? "Viết biên bản bằng Claude" : "Cập nhật biên bản bằng Claude";
-  $("cbCopyState").textContent = justCopied ? "Đã sao chép yêu cầu và lời thoại." : "Đang chờ kết quả từ Claude.";
+  $("cbTitle").textContent = CB_TITLE[c.kind] || CB_TITLE.apply;
+  $("cbCopyState").textContent = justCopied ? copiedNote(c) : "Đang chờ kết quả từ Claude.";
   if (!justCopied){ $("cbText").hidden = true; $("cbImport").hidden = true; $("cbPrompt").hidden = true; }
 }
 function openClaude(kind){
@@ -1152,7 +1181,7 @@ function openClaude(kind){
 }
 $("cbClose").onclick = async () => { const m = S.cur; if (!m) return; delete m.cho; renderClaudeBox(m); await saveMeeting(m); };
 $("cbRecopy").onclick = () => { const m = S.cur; if (!m || !m.cho) return;
-  copyText(claudePrompt(m)).then(ok => { if (ok){ $("cbCopyState").textContent = "Đã sao chép yêu cầu và lời thoại."; toast("Đã sao chép lại"); } }); };
+  copyText(claudePrompt(m)).then(ok => { if (ok){ $("cbCopyState").textContent = copiedNote(m.cho); toast("Đã sao chép lại"); } }); };
 $("cbPaste").onclick = async () => {
   try{ const t = await navigator.clipboard.readText(); if (!t.trim()) throw new Error("trống"); await importClaude(t); }
   catch(e){ $("cbText").hidden = false; $("cbImport").hidden = false; $("cbText").focus(); toast("Giữ tay vào ô bên dưới → Dán → bấm Nhập kết quả"); }
@@ -1164,9 +1193,9 @@ async function importClaude(t){
     if (t.includes(PROMPT_MARK) || t.includes("LỜI THOẠI:\n["))
       throw new Error("phần vừa dán vẫn là yêu cầu gửi cho Claude, chưa phải câu trả lời. Hãy sang Claude, bấm Sao chép ở câu trả lời rồi quay lại bấm Dán kết quả");
     const obj = parseReply(t); if (!obj) throw new Error("không đọc được kết quả. Hãy sao chép đúng khối mã trong câu trả lời của Claude");
-    if (c.kind === "gen") finishGen(m, obj); else finishApply(m, obj, c.idx);
+    if (c.kind === "gen") finishGen(m, obj); else finishApply(m, obj, c.idx || [], c.kind === "lang" ? LANG_DONE : "");
     delete m.cho; $("cbText").value = ""; await saveMeeting(m); openMeeting(m, "min");
-    toast(c.kind === "gen" ? "Đã nhập biên bản từ Claude" : "Biên bản đã được cập nhật");
+    toast(c.kind === "gen" ? "Đã nhập biên bản từ Claude" : c.kind === "lang" ? "Đã thống nhất ngôn ngữ biên bản" : "Biên bản đã được cập nhật");
   }catch(e){ $("minErr").textContent = "Chưa nhập được: " + e.message + "."; $("cbText").hidden = false; $("cbImport").hidden = false; }
 }
 
@@ -1241,6 +1270,12 @@ function applyAuto(m){
     finishApply(m, res, idx);
   }, "Biên bản đã được cập nhật", "Đã lưu xác nhận nhưng chưa cập nhật được vào biên bản: ");
 }
+function langAuto(m){
+  return autoRun(m, async () => {
+    finishApply(m, await callJSON(langPrompt(m) + JSON_ONLY, 6000, "Đang thống nhất ngôn ngữ biên bản…"), [], LANG_DONE);
+  }, "Đã thống nhất ngôn ngữ biên bản", "Chưa thống nhất được ngôn ngữ biên bản: ");
+}
+const unifyLanguage = m => S.writer === "claude" ? openClaude("lang") : langAuto(m);
 $("btnMinutes").onclick = () => { const m = S.cur, b = $("btnMinutes"); $("minErr").textContent = "";
   // Đã có biên bản: hỏi lại một lần, vì bản mới sẽ thay bản đang có (ở chế độ tự động còn tốn phí)
   if (m.minutes && !b._sure){ b._sure = true; b.textContent = "Bấm lần nữa để tạo lại"; toast("Biên bản hiện tại sẽ được thay bằng bản mới.");
@@ -1311,11 +1346,15 @@ function renderMinutes(m){
   if ((m.lich_su || []).length){ const h = el("details","card"); h.append(el("summary","", `Lịch sử chỉnh sửa (${m.lich_su.length})`));
     m.lich_su.slice().reverse().forEach(e => { const d = el("div"); d.append(el("p","muted", e.luc), iconList("check", e.thay_doi || [])); h.append(d); });
     v.appendChild(h); }
+  const lang = el("div","langbox"), lb = el("button","ghost","Thống nhất ngôn ngữ biên bản"); lb.id = "btnLang"; lb.onclick = () => unifyLanguage(m);
+  lang.append(lb, el("p","muted","Dùng khi biên bản còn lẫn từ tiếng Anh: Claude viết lại bằng tiếng Việt, văn phong công sở, giữ đúng ý. Chỉ gửi biên bản, không gửi lại lời thoại."));
+  v.appendChild(lang);
 }
 function confirmItems(m){ const x = m.minutes || {}; x.can_xac_nhan = (x.can_xac_nhan || []).map(q => typeof q === "string" ? {noi_dung:q} : q); return x.can_xac_nhan; }
 const toMs = t => { const p = String(t || "").match(/(\d+):(\d+)(?::(\d+))?/); if (!p) return null; return (p[3] != null ? (+p[1]*3600 + +p[2]*60 + +p[3]) : (+p[1]*60 + +p[2]))*1000; };
 // Người dùng vừa tự sửa nội dung: bản "hoàn tác" cũ không còn khớp, và yêu cầu cập nhật đang chờ Claude (nếu có) cũng vậy
-function touched(m, confirmChanged){ delete m.truoc; if (confirmChanged && m.cho && m.cho.kind === "apply") delete m.cho; }
+function touched(m, contentChanged){ delete m.truoc;
+  if (contentChanged && m.cho && m.cho.kind !== "gen"){ delete m.cho; renderClaudeBox(m); toast("Đã huỷ yêu cầu đang chờ Claude vì nội dung vừa được sửa"); } }
 function confirmRow(m, q){
   const r = el("div","cx" + (q.ok ? " ok" : ""));
   r.append(el("p","cxq", q.noi_dung || ""));
@@ -1365,7 +1404,7 @@ function renderTasks(m){
       cancel.onclick = () => { delete t._edit; renderTasks(m); };
       save.onclick = async () => {
         f.querySelectorAll("[data-k]").forEach(i => { const val = i.value.trim(); if (val || !unsure(t[i.dataset.k])) t[i.dataset.k] = val; });
-        delete t._edit; touched(m); await saveMeeting(m); refresh(); toast("Đã lưu đầu việc"); };
+        delete t._edit; const waiting = !!m.cho && m.cho.kind !== "gen"; touched(m, true); await saveMeeting(m); refresh(); if (!waiting) toast("Đã lưu đầu việc"); };
       btns.append(cancel, save); f.append(btns); body.append(f);
     } else {
       body.append(el("span","tt", t.cong_viec || ""));
