@@ -63,6 +63,12 @@ body{background:var(--bg);color:var(--fg);font:15.5px/1.55 var(--font);
   padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(110px + env(safe-area-inset-bottom,0px));
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));}
 [hidden]{display:none!important}
+/* App chạy ở hai nơi: trang web và trong app Claude (trang Artifact). Phần chỉ dùng ở một nơi được đánh dấu bằng hai lớp dưới đây. */
+html:not(.in-claude) .claude-only, html.in-claude .web-only{display:none!important}
+html.in-claude body{padding-top:0;padding-bottom:110px}   /* trong Claude, khung trang đã tự chừa vùng an toàn trên và dưới */
+.boot{min-height:60vh;display:grid;align-content:center;justify-items:center;gap:14px;text-align:center}
+#impText,#expText{min-height:120px;font:16px var(--mono)}   /* từ 16px để iPhone không tự phóng to trang */
+.cbsteps a{color:var(--link);font-weight:600}
 main{max-width:620px;margin:0 auto}
 svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
@@ -268,6 +274,16 @@ details[open].card summary::after{content:"－"}
   <button class="iconbtn" id="btnSettings" aria-label="Cài đặt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div>
 
+<!-- Chỉ trong Claude: màn chờ kết nối kho dữ liệu -->
+<section id="scrBoot" hidden>
+  <div class="boot">
+    <div class="spinner" id="bootSpin"></div>
+    <h1 id="bootTitle" style="font-size:20px">Đang mở kho dữ liệu trong Claude…</h1>
+    <p class="muted" id="bootMsg"></p>
+    <button id="btnBootRetry" hidden>Thử lại</button>
+  </div>
+</section>
+
 <!-- Khoá / tạo mã PIN -->
 <section id="scrLock" hidden>
   <div class="lock">
@@ -285,12 +301,12 @@ details[open].card summary::after{content:"－"}
 <!-- Cài đặt -->
 <section id="scrSettings" hidden>
   <div class="stack">
-    <p class="sec-label">Kết nối dịch vụ</p>
+    <p class="sec-label"><span class="web-only">Kết nối dịch vụ</span><span class="claude-only">Viết biên bản</span></p>
     <div class="card">
-      <label>Khoá API AssemblyAI
+      <label class="web-only">Khoá API AssemblyAI
         <input id="apiKey" type="password" autocomplete="off" placeholder="Dán khoá API vào đây">
       </label>
-      <p class="muted">Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
+      <p class="muted web-only">Khoá được mã hoá bằng mã PIN và chỉ lưu trên điện thoại này.</p>
       <label>Cách viết biên bản
         <select id="writer">
           <option value="claude">Claude Pro (sao chép – dán, miễn phí)</option>
@@ -306,14 +322,14 @@ details[open].card summary::after{content:"－"}
       <button class="primary" id="btnSaveKey">Lưu</button>
       <p class="muted" id="keyStatus"></p>
     </div>
-    <p class="sec-label">Giao diện</p>
-    <div class="card">
+    <p class="sec-label web-only">Giao diện</p>
+    <div class="card web-only">
       <div class="seg3" id="themeSeg" role="radiogroup" aria-label="Chế độ hiển thị">
         <button role="radio" data-theme="auto">Theo điện thoại</button><button role="radio" data-theme="light">Sáng</button><button role="radio" data-theme="dark">Tối</button>
       </div>
     </div>
-    <p class="sec-label">Dữ liệu trên AssemblyAI</p>
-    <div class="card">
+    <p class="sec-label web-only">Dữ liệu trên AssemblyAI</p>
+    <div class="card web-only">
       <p class="muted">Sau mỗi lần chuyển thành chữ, app tự xoá bản chép lời và file ghi âm trên máy chủ AssemblyAI. Bấm nút dưới để kiểm tra xem còn sót bản nào không.</p>
       <button id="btnScan">Kiểm tra dữ liệu còn lưu</button>
       <p class="muted" id="scanStatus"></p>
@@ -325,8 +341,8 @@ details[open].card summary::after{content:"－"}
       <p class="muted">Mã dài 8–10 số khó dò hơn nhiều so với 6 số.</p>
       <button id="btnLock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Khoá app ngay</button>
       <p class="muted">App tự khoá sau 10 phút không dùng. Quên mã PIN thì không mở lại được dữ liệu cũ.</p>
-      <button class="danger" id="btnWipe">Xoá toàn bộ dữ liệu trên máy</button>
-      <p class="err" id="wipeConfirm" hidden>Bấm lần nữa để xác nhận. Mọi biên bản và khoá API sẽ bị xoá.</p>
+      <button class="danger" id="btnWipe"><span class="web-only">Xoá toàn bộ dữ liệu trên máy</span><span class="claude-only">Xoá toàn bộ dữ liệu của app trong Claude</span></button>
+      <p class="err" id="wipeConfirm" hidden>Bấm lần nữa để xác nhận. Mọi biên bản<span class="web-only"> và khoá API</span> sẽ bị xoá.</p>
     </div>
     <p class="muted" id="appVer" style="text-align:center"></p>
   </div>
@@ -344,7 +360,8 @@ details[open].card summary::after{content:"－"}
     <div class="empty" id="emptyList">
       <div class="blob"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
       <h2>Chưa có cuộc họp nào</h2>
-      <p class="muted">Bấm <b>Cuộc họp mới</b> ở dưới để ghi âm hoặc chọn file ghi âm từ app Ghi âm.</p>
+      <p class="muted web-only">Bấm <b>Cuộc họp mới</b> ở dưới để ghi âm hoặc chọn file ghi âm từ app Ghi âm.</p>
+      <p class="muted claude-only">Bấm <b>Cuộc họp mới</b> ở dưới để thêm cuộc họp đã chuyển thành chữ.</p>
     </div>
   </div>
 </section>
@@ -352,7 +369,18 @@ details[open].card summary::after{content:"－"}
 <!-- Cuộc họp mới -->
 <section id="scrNew" hidden>
   <div class="stack">
-    <div id="pickBox" class="stack">
+    <!-- Trong Claude: không ghi âm và không gọi được AssemblyAI, nên cuộc họp được dán sang từ trang web -->
+    <div class="card claude-only">
+      <h2>Thêm cuộc họp đã chuyển thành chữ</h2>
+      <ol class="cbsteps">
+        <li>Mở <a href="https://tranghm9.github.io/bien-ban-hop/" target="_blank" rel="noopener">trang chuyển giọng nói thành chữ</a> bằng Safari. Ghi âm hoặc chọn file ghi âm ở đó như trước.</li>
+        <li>Khi đã có lời thoại, bấm <b>Sao chép sang Claude</b>.</li>
+        <li>Quay lại đây, chạm giữ vào ô bên dưới, chọn <b>Dán</b>, rồi bấm <b>Thêm cuộc họp</b>.</li>
+      </ol>
+      <textarea id="impText" placeholder="Chạm giữ vào đây rồi chọn Dán" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+      <p class="muted">Ghi âm phải làm ở trang web vì trang trong Claude không được phép dùng micro và không gửi được file ghi âm đi chuyển thành chữ.</p>
+    </div>
+    <div id="pickBox" class="stack web-only">
       <div class="tiles">
         <button class="tile recb" id="btnRec"><span class="ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Ghi âm ngay<small>Ghi trực tiếp trong app</small></button>
         <button class="tile fileb" id="btnPick"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg></span>Chọn file<small>Từ app Ghi âm / Tệp</small></button>
@@ -366,8 +394,8 @@ details[open].card summary::after{content:"－"}
       <p class="muted">Đang ghi âm. Giữ màn hình mở, không chuyển app.</p>
       <button class="stopbtn" id="btnStop" aria-label="Dừng ghi"><i></i></button>
     </div>
-    <div id="fileInfo"></div>
-    <details class="card" id="metaBox" open>
+    <div id="fileInfo" class="web-only"></div>
+    <details class="card web-only" id="metaBox" open>
       <summary>Thông tin cuộc họp</summary>
       <label>Chủ đề<input id="mTitle" placeholder="Ví dụ: Họp tiến độ dự án X"></label>
       <label>Ngày họp<input id="mDate" type="date"></label>
@@ -437,6 +465,8 @@ details[open].card summary::after{content:"－"}
       <button class="primary" id="btnSaveNames">Lưu tên người nói</button>
       <p class="muted" id="sttInfo"></p>
     </div>
+    <button class="ghost web-only" id="btnToClaude"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Sao chép sang Claude</button>
+    <textarea id="expText" class="web-only" readonly hidden aria-label="Nội dung cuộc họp để sao chép sang Claude"></textarea>
     <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Chỉ sao chép lời thoại</button>
     <button class="danger" id="btnDel">Xoá cuộc họp này</button>
     <p class="err" id="delConfirm" hidden>Bấm lần nữa để xác nhận xoá.</p>
@@ -446,7 +476,7 @@ details[open].card summary::after{content:"－"}
 
 <!-- Thanh nút dưới cùng (đổi theo từng màn) -->
 <div class="bottombar" id="barHome" hidden><button class="primary fab" id="btnNew"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Cuộc họp mới</button></div>
-<div class="bottombar" id="barNew" hidden><button class="primary" id="btnProcess" disabled>Chuyển thành chữ</button></div>
+<div class="bottombar" id="barNew" hidden><button class="primary web-only" id="btnProcess" disabled>Chuyển thành chữ</button><button class="primary claude-only" id="btnImport">Thêm cuộc họp</button></div>
 <div class="bottombar" id="barMeet" hidden>
   <button id="btnExcel"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Tải Excel</button>
   <button class="primary" id="btnMinutes">Tạo biên bản</button>
@@ -456,10 +486,16 @@ details[open].card summary::after{content:"－"}
 
 <script>
 "use strict";
-const APP_VERSION = "2026.11.15";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
+const APP_VERSION = "2026.11.15.2";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
+const CLAUDE_APP = "https://claude.ai/artifact/MRA8fqXNXRMcV7jKXezEcb";   // bản của app chạy trong Claude (trang riêng tư, chỉ chủ tài khoản mở được)
 const $ = id => document.getElementById(id);
+// App chạy ở hai nơi. Trên trang web: ghi âm, gọi AssemblyAI, dữ liệu nằm trên máy. Trong app Claude (trang Artifact): không ghi âm và
+// không gọi được AssemblyAI, nên cuộc họp được dán sang từ trang web; bù lại Claude viết biên bản ngay trong trang và dữ liệu (đã mã hoá) nằm trong tài khoản Claude.
+const IN_CLAUDE = !!(window.claude && typeof window.claude.use === "function");
+const cap = name => IN_CLAUDE ? Promise.resolve().then(() => window.claude.use(name)).catch(() => null) : Promise.resolve(null);
+if (IN_CLAUDE) document.documentElement.classList.add("in-claude");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const ICON = {
   check:'<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',
@@ -472,15 +508,15 @@ const ICON = {
   file:'<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
   doc:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>'
 };
-const screens = ["scrLock","scrSettings","scrHome","scrNew","scrWork","scrMeet"];
+const screens = ["scrBoot","scrLock","scrSettings","scrHome","scrNew","scrWork","scrMeet"];
 const TITLES = {scrSettings:"Cài đặt", scrNew:"Cuộc họp mới"};
 const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", writer:"claude", audio:null, audioName:"", audioUrl:null,
   cur:null, tab:"min", all:[], loaded:false, job:null, jobRunning:false, busyN:0, busy:false, rec:false,
-  genId:null, genText:"", trKey:null };
+  genId:null, genText:"", trKey:null, sample:null, opening:false };
 
 function show(id){
   screens.forEach(s => $(s).hidden = s !== id); S.screen = id;
-  $("topbar").hidden = id === "scrLock" || id === "scrWork";
+  $("topbar").hidden = id === "scrLock" || id === "scrWork" || id === "scrBoot";
   $("btnBack").style.visibility = id === "scrHome" ? "hidden" : "visible";
   $("btnSettings").style.visibility = id === "scrHome" ? "visible" : "hidden";
   $("topTitle").textContent = TITLES[id] || "";
@@ -514,24 +550,33 @@ const b64 = buf => { const u = new Uint8Array(buf); let s = "";
   for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
   return btoa(s); };
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
-function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+// Các giá trị nhỏ (thông tin mở khoá, cài đặt). Trên web: localStorage. Trong Claude: một tài liệu trong kho của trang, có bản sao KV trong bộ nhớ.
+const KV = {}; let CS = null;   // CS = {root, heads, parts}: các đường dẫn trong kho Claude, có sau khi bootClaude() kết nối xong
+let kvChain = Promise.resolve();
+// Mọi lượt ghi tài liệu gốc đi qua một hàng đợi, mỗi lúc một lượt. kvSave ghi KV như nó đang có lúc tới lượt;
+// kvCommit ghi một bản mới và chỉ khi ghi xong mới đưa vào KV (dùng cho thông tin mở khoá: ghi hỏng thì coi như chưa đổi gì).
+function kvSave(){ return kvChain = kvChain.catch(() => {}).then(() => CS.root.set({...KV})); }
+function kvCommit(next){ return kvChain = kvChain.catch(() => {}).then(() => CS.root.set(next)).then(() => { Object.assign(KV, next); }); }
+function lsGet(k){ if (IN_CLAUDE) return k in KV ? KV[k] : null; try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ if (IN_CLAUDE){ KV[k] = v; kvSave().catch(() => toast("Chưa lưu được cài đặt vào Claude, hãy thử lại")); return; } try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ if (IN_CLAUDE){ delete KV[k]; kvSave().catch(() => {}); return; } try{ localStorage.removeItem(k); }catch(e){} }
 const KDF_ITER = 600000;                             // số vòng băm cho mã PIN mới tạo hoặc mới đổi
 const kdfIter = () => +lsGet("bb_kdf") || 250000;    // dữ liệu tạo trước bản 2026.11.14.2 dùng 250.000 vòng
 async function deriveKey(pin, salt, iter){
   const base = await crypto.subtle.importKey("raw", te.encode(pin), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:iter, hash:"SHA-256"}, base, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
 }
-async function enc(obj, replacer, key = S.key){
+async function encBytes(bytes, key = S.key){
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, te.encode(JSON.stringify(obj, replacer)));
-  return {iv:b64(iv), ct:b64(ct)};
+  return {iv:b64(iv), ct:b64(await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, bytes))};
 }
-async function dec(box, key = S.key){
-  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(box.iv)}, key, unb64(box.ct));
-  return JSON.parse(td.decode(pt));
-}
+async function decBytes(box, key = S.key){ return new Uint8Array(await crypto.subtle.decrypt({name:"AES-GCM", iv:unb64(box.iv)}, key, unb64(box.ct))); }
+const enc = (obj, replacer, key) => encBytes(te.encode(JSON.stringify(obj, replacer)), key);
+const dec = async (box, key) => JSON.parse(td.decode(await decBytes(box, key)));
+// Nén gzip (có sẵn trong trình duyệt từ iOS 16.4): chữ tiếng Việt gọn đi 3–4 lần. Máy không có thì bỏ qua bước nén.
+const CAN_GZIP = typeof CompressionStream === "function" && typeof DecompressionStream === "function";
+const gzip = async bytes => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+const gunzip = async bytes => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer());
 let dbp;
 function db(){ return dbp ||= new Promise((res,rej) => { const r = indexedDB.open("bienban",1);
   r.onupgradeneeded = () => r.result.createObjectStore("meetings",{keyPath:"id"});
@@ -539,17 +584,105 @@ function db(){ return dbp ||= new Promise((res,rej) => { const r = indexedDB.ope
 async function tx(mode, fn){ const d = await db(); return new Promise((res,rej) => { const t = d.transaction("meetings", mode);
   const st = t.objectStore("meetings"); const out = fn(st); t.oncomplete = () => res(out && out.result);
   t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("không ghi được dữ liệu")); }); }
-const NO_SAVE = (k, v) => k === "_edit" ? undefined : v;   // cờ "đang sửa" chỉ dùng trên màn hình, không lưu
+// Không lưu: các trường tạm bắt đầu bằng "_" (cờ đang sửa, thông tin kho). Trong Claude, lời thoại (utts) được lưu riêng, xem saveMeetingClaude.
+const NO_SAVE = (k, v) => k[0] === "_" || (IN_CLAUDE && k === "utts") ? undefined : v;
 async function saveMeeting(m){
-  const box = await enc(m, NO_SAVE); await tx("readwrite", st => st.put({id:m.id, ...box}));
+  if (IN_CLAUDE) await saveMeetingClaude(m);
+  else { const box = await enc(m, NO_SAVE); await tx("readwrite", st => st.put({id:m.id, ...box})); }
   if (S.loaded){ const i = S.all.findIndex(x => x.id === m.id); if (i < 0) S.all.push(m); else S.all[i] = m; }
 }
 async function loadMeetings(){
+  if (IN_CLAUDE) return loadMeetingsClaude();
   const rows = await tx("readonly", st => st.getAll()); const out = [];
   for (const r of rows || []) { try{ out.push(await dec(r)); }catch(e){} }
   return out;
 }
-async function delMeeting(id){ await tx("readwrite", st => st.delete(id)); S.all = S.all.filter(x => x.id !== id); }
+async function delMeeting(id){
+  if (IN_CLAUDE){ const m = S.all.find(x => x.id === id); await CS.heads.doc(id).delete(); if (m) await dropParts(id, m._t); }
+  else await tx("readwrite", st => st.delete(id));
+  S.all = S.all.filter(x => x.id !== id);
+}
+
+/* ---------- Kho dữ liệu trong Claude (chỉ khi app chạy trong Claude) ---------- */
+// Mỗi tài liệu trong kho tối đa 256 KiB và kho không có giao dịch, nên:
+// - Phần nhẹ của cuộc họp (biên bản, tên người nói...) là một tài liệu, ghi lại mỗi lần sửa.
+// - Lời thoại nặng và không đổi sau khi nhập: nén, mã hoá một lần, cắt thành nhiều phần, ghi TRƯỚC rồi mới ghi tài liệu chính trỏ tới (t = {v, n, iv, z}; z = 1 là có nén).
+// - Mã PIN không mã hoá thẳng dữ liệu mà mở một "khoá dữ liệu" ngẫu nhiên (bb_wrap). Đổi mã PIN chỉ ghi lại một tài liệu, không phải mã hoá lại mọi thứ.
+const PART = 180000;
+const partId = (id, t, k) => `${id}.${t.v}.${k}`;
+async function dropParts(id, t){ if (t) for (let k = 0; k < t.n; k++) await CS.parts.doc(partId(id, t, k)).delete().catch(() => {}); }
+function saveMeetingClaude(m){   // xếp hàng: mỗi cuộc họp chỉ một lượt ghi tại một thời điểm
+  const run = async () => {
+    if (!m._t){
+      const raw = te.encode(JSON.stringify(m.utts)), box = await encBytes(CAN_GZIP ? await gzip(raw) : raw);
+      const t = {v: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), n: Math.ceil(box.ct.length / PART), iv: box.iv, z: CAN_GZIP ? 1 : 0};
+      for (let k = 0; k < t.n; k++) await CS.parts.doc(partId(m.id, t, k)).set({ct: box.ct.slice(k * PART, (k + 1) * PART)});
+      m._t = t;
+    }
+    const box = await enc(m, NO_SAVE);
+    if (box.ct.length > 240000) throw new Error("biên bản quá dài để lưu vào Claude");
+    await CS.heads.doc(m.id).set({iv: box.iv, ct: box.ct, t: m._t});
+  };
+  const p = (m._w || Promise.resolve()).catch(() => {}).then(run); m._w = p;
+  return p.catch(e => { toast("Chưa lưu được vào Claude: " + (e.message || e.code || "lỗi kết nối")); throw e; });
+}
+async function loadMeetingsClaude(){
+  const snap = await CS.heads.limit(1000).get(), out = [];
+  for (const d of snap.docs){ const b = d.data(); try{ const m = await dec({iv: b.iv, ct: b.ct}); m._t = b.t; out.push(m); }catch(e){} }
+  return out;
+}
+// Lời thoại chỉ được tải và giải mã khi mở cuộc họp
+async function loadTranscript(m){
+  const t = m._t; if (!t) throw new Error("cuộc họp này chưa có lời thoại trong kho");
+  const got = await Promise.all(Array.from({length: t.n}, (_, k) => CS.parts.doc(partId(m.id, t, k)).get()));
+  if (got.some(g => !g.exists)) throw new Error("thiếu một phần lời thoại trong kho");
+  const bytes = await decBytes({iv: t.iv, ct: got.map(g => g.data().ct).join("")});
+  if (t.z && !CAN_GZIP) throw new Error("máy này quá cũ để mở lời thoại đã nén, hãy cập nhật iPhone hoặc app Claude");
+  return JSON.parse(td.decode(t.z ? await gunzip(bytes) : bytes));
+}
+const importDek = raw => crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt","decrypt"]);
+async function unwrapDek(pin){   // sai mã PIN thì ném lỗi
+  const kek = await deriveKey(pin, unb64(KV.bb_salt), +KV.bb_kdf || KDF_ITER);
+  return unb64(await dec(JSON.parse(KV.bb_wrap), kek));
+}
+async function wrapDek(raw, pin){
+  const salt = crypto.getRandomValues(new Uint8Array(16)), kek = await deriveKey(pin, salt, KDF_ITER);
+  return {bb_salt: b64(salt), bb_kdf: String(KDF_ITER), bb_wrap: JSON.stringify(await enc(b64(raw), null, kek))};
+}
+async function createPinClaude(pin){
+  // Kho đã có dữ liệu (ví dụ tạo từ máy khác vài giây trước) thì không được tạo khoá mới đè lên: dữ liệu cũ sẽ không bao giờ mở lại được
+  const cur = await CS.root.get(); if (cur.exists && cur.data().bb_wrap){ Object.assign(KV, cur.data()); throw new Error("app đã có mã PIN (tạo từ thiết bị khác). Hãy nhập mã PIN đó"); }
+  if (!(await CS.heads.limit(1).get()).empty) throw new Error("kho đang có dữ liệu của một mã PIN khác nên không tạo mã mới được");
+  const raw = crypto.getRandomValues(new Uint8Array(32)); await kvCommit({...KV, ...(await wrapDek(raw, pin))});
+  S.key = await importDek(raw);
+}
+async function changePinClaude(newPin, oldPin){
+  await kvCommit({...KV, ...(await wrapDek(await unwrapDek(oldPin), newPin))});
+}
+async function wipeClaude(){
+  const snap = await CS.heads.limit(1000).get();
+  for (const d of snap.docs){ const t = d.data().t; await CS.heads.doc(d.id).delete(); await dropParts(d.id, t); }
+  for (let i = 0; i < 20; i++){ const rest = await CS.parts.limit(50).get(); if (rest.empty) break; for (const d of rest.docs) await CS.parts.doc(d.id).delete(); }   // phần mồ côi nếu có
+  await CS.root.delete(); for (const k of Object.keys(KV)) delete KV[k];
+}
+const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("quá lâu không thấy trả lời")), ms))]);
+async function bootClaude(){
+  show("scrBoot"); $("bootSpin").hidden = false; $("btnBootRetry").hidden = true; $("bootTitle").textContent = "Đang mở kho dữ liệu trong Claude…"; $("bootMsg").textContent = "";
+  const fail = msg => { $("bootSpin").hidden = true; $("bootTitle").textContent = "Chưa mở được kho dữ liệu"; $("bootMsg").textContent = msg; $("btnBootRetry").hidden = false; };
+  try{
+    const [db, user] = await Promise.all([cap("db"), cap("user")]), uid = user ? await user.id() : null;
+    if (!db || !uid) return fail("Trang này cần được mở trong app Claude bằng tài khoản của bạn. Nếu bạn đang ở trong Claude, hãy đóng trang rồi mở lại.");
+    const root = db.doc("data/users/" + uid + "/bbh"); CS = {root, heads: root.collection("meetings"), parts: root.collection("parts")};
+    const snap = await withTimeout(root.get(), 20000);
+    for (const k of Object.keys(KV)) delete KV[k]; if (snap.exists) Object.assign(KV, snap.data());
+    S.sample = await cap("sample"); S.writer = S.sample ? "direct" : "claude";
+    const w = $("writer"); w.innerHTML = "";
+    (S.sample ? [["direct","Claude viết ngay trong trang"],["claude","Sao chép – dán qua cuộc trò chuyện"]] : [["claude","Sao chép – dán qua cuộc trò chuyện"]])
+      .forEach(([v, t]) => { const o = el("option","",t); o.value = v; w.append(o); });
+    initLock();
+  }catch(e){ fail("Lỗi: " + (e.message || e.code || "không rõ") + ". Kiểm tra mạng rồi bấm Thử lại."); }
+}
+$("btnBootRetry").onclick = bootClaude;
 
 // Việc chuyển thành chữ đang chạy dở được ghi nhớ (đã mã hoá) để nếu app bị đóng giữa chừng thì lấy lại kết quả,
 // không phải tải lên và trả tiền lần nữa. Dạng {id, del:true} = bản trên máy chủ AssemblyAI còn chờ xoá.
@@ -557,11 +690,11 @@ async function setJob(j){ if (j) lsSet("bb_job", JSON.stringify(await enc(j))); 
 async function getJob(){ const raw = lsGet("bb_job"); if (!raw) return null; try{ return await dec(JSON.parse(raw)); }catch(e){ return null; } }
 
 /* ---------- Màn nhập mã PIN: mở khoá, tạo mã lần đầu, đổi mã ---------- */
-const hasPin = () => !!lsGet("bb_salt");
-const PIN = { mode:"unlock", stage:1, buf:"", first:"" };
+const hasPin = () => !!lsGet(IN_CLAUDE ? "bb_wrap" : "bb_salt");
+const PIN = { mode:"unlock", stage:1, buf:"", first:"", old:"" };
 const PIN_TEXT = {   // [tiêu đề, gợi ý, chữ trên nút] cho từng bước
   unlock: [["Mở khoá", "Nhập mã PIN để mở biên bản của bạn.", "Mở khoá"]],
-  create: [["Tạo mã PIN", "Ít nhất 6 số, nên dùng 8–10 số. Mã này mã hoá mọi biên bản trên máy, quên mã là mất dữ liệu.", "Tiếp tục"],
+  create: [["Tạo mã PIN", "Ít nhất 6 số, nên dùng 8–10 số. Mã này mã hoá mọi biên bản của bạn, quên mã là mất dữ liệu.", "Tiếp tục"],
            ["Nhập lại mã PIN", "Nhập lại để xác nhận.", "Tạo mã PIN"]],
   change: [["Đổi mã PIN", "Nhập mã PIN hiện tại.", "Tiếp tục"],
            ["Mã PIN mới", "Ít nhất 6 số, nên dùng 8–10 số.", "Tiếp tục"],
@@ -572,7 +705,7 @@ function drawDots(){ const n = PIN.buf.length, d = $("dots"); d.innerHTML = "";
 function pinText(){ const [t, h, b] = PIN_TEXT[PIN.mode][PIN.stage - 1];
   $("lockTitle").textContent = t; $("lockHint").textContent = h; $("btnUnlock").textContent = b; $("btnPinCancel").hidden = PIN.mode !== "change"; }
 function pinStage(n){ PIN.stage = n; PIN.buf = ""; pinText(); drawDots(); }
-function startPin(mode){ PIN.mode = mode; PIN.first = ""; $("lockErr").textContent = ""; pinStage(1); show("scrLock"); }
+function startPin(mode){ PIN.mode = mode; PIN.first = PIN.old = ""; $("lockErr").textContent = ""; pinStage(1); show("scrLock"); }
 function initLock(){ startPin(hasPin() ? "unlock" : "create"); }
 function pinKey(v){ if (!v) return; if (v === "⌫") PIN.buf = PIN.buf.slice(0,-1); else if (PIN.buf.length < 12) PIN.buf += v;
   $("lockErr").textContent = ""; drawDots(); }
@@ -588,6 +721,7 @@ function shake(msg){ $("lockErr").textContent = msg; const d = $("dots"); d.clas
 // Thử mở khoá bằng mã vừa nhập. Trả về true, hoặc câu báo lỗi.
 // Có xử lý trường hợp lần đổi mã PIN trước bị dừng giữa chừng (còn "bb_next"): xem dữ liệu thật đang được mã hoá bằng khoá nào.
 async function tryUnlock(pin){
+  if (IN_CLAUDE){ try{ S.key = await importDek(await unwrapDek(pin)); return true; }catch(e){ return "Sai mã PIN, thử lại."; } }
   let next = null; try{ next = JSON.parse(lsGet("bb_next") || "null"); }catch(e){}
   const metas = [{salt: lsGet("bb_salt"), kdf: kdfIter(), check: lsGet("bb_check")}];
   if (next) metas.push({salt: next.salt, kdf: next.kdf, check: JSON.stringify(next.check), next: true});
@@ -607,14 +741,19 @@ async function tryUnlock(pin){
 }
 async function afterUnlock(){
   const cfg = lsGet("bb_cfg");
+  if (IN_CLAUDE){   // trong Claude không có khoá API và việc chuyển chữ dở; chỉ nhớ cách viết biên bản
+    if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.writer = c.writer === "claude" || !S.sample ? "claude" : "direct"; }catch(e){} }
+    return openHome();
+  }
   if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey = c.apiKey || ""; S.model = c.model || S.model; S.writer = c.writer || "claude"; }catch(e){} }
   const job = await getJob();
   if (job && job.del){ S.job = null; finishDelete(job.id); } else S.job = job && job.id ? job : null;
   if (!S.apiKey) openSettings(); else openHome();
 }
 // Đổi mã PIN = mã hoá lại toàn bộ dữ liệu bằng khoá mới. Làm theo thứ tự sao cho app bị đóng ở bất kỳ bước nào cũng không mất dữ liệu.
-async function changePin(newPin){
+async function changePin(newPin, oldPin){
   if (S.busy || S.genId) throw new Error("đang xử lý việc khác, hãy thử lại sau");
+  if (IN_CLAUDE) return changePinClaude(newPin, oldPin);
   if (!S.loaded){ S.all = await loadMeetings(); S.loaded = true; }
   const job = await getJob();
   const salt = crypto.getRandomValues(new Uint8Array(16)), key = await deriveKey(newPin, salt, KDF_ITER);
@@ -643,8 +782,9 @@ $("btnUnlock").onclick = async () => {
     if (PIN.mode === "create"){
       if (PIN.stage === 1){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); PIN.first = pin; return pinStage(2); }
       if (pin !== PIN.first){ PIN.first = ""; pinStage(1); return shake("Hai lần nhập không giống nhau, hãy đặt lại."); }
-      const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt, KDF_ITER);
-      lsSet("bb_salt", b64(salt)); lsSet("bb_kdf", String(KDF_ITER)); lsSet("bb_check", JSON.stringify(await enc("ok")));
+      if (IN_CLAUDE){ $("btnUnlock").textContent = "Đang tạo…"; await createPinClaude(pin); }
+      else { const salt = crypto.getRandomValues(new Uint8Array(16)); S.key = await deriveKey(pin, salt, KDF_ITER);
+        lsSet("bb_salt", b64(salt)); lsSet("bb_kdf", String(KDF_ITER)); lsSet("bb_check", JSON.stringify(await enc("ok"))); }
       PIN.buf = PIN.first = ""; return await afterUnlock();
     }
     if (PIN.mode === "unlock"){
@@ -655,24 +795,24 @@ $("btnUnlock").onclick = async () => {
     }
     // Đổi mã PIN: bước 1 kiểm tra mã hiện tại, bước 2 và 3 nhập mã mới hai lần
     if (PIN.stage === 1){
-      const k = await deriveKey(pin, unb64(lsGet("bb_salt")), kdfIter());
-      try{ await dec(JSON.parse(lsGet("bb_check")), k); }catch(e){ pinStage(1); return shake("Sai mã PIN, thử lại."); }
-      return pinStage(2);
+      try{ if (IN_CLAUDE) await unwrapDek(pin); else await dec(JSON.parse(lsGet("bb_check")), await deriveKey(pin, unb64(lsGet("bb_salt")), kdfIter())); }
+      catch(e){ pinStage(1); return shake("Sai mã PIN, thử lại."); }
+      PIN.old = pin; return pinStage(2);
     }
     if (PIN.stage === 2){ if (pin.length < 6) return shake("Mã PIN cần ít nhất 6 số."); PIN.first = pin; return pinStage(3); }
     if (pin !== PIN.first){ PIN.first = ""; pinStage(2); return shake("Hai lần nhập không giống nhau, hãy nhập lại mã mới."); }
     $("btnUnlock").textContent = "Đang mã hoá lại dữ liệu…";
-    await changePin(pin); PIN.buf = PIN.first = ""; toast("Đã đổi mã PIN"); openSettings();
+    await changePin(pin, PIN.old); PIN.buf = PIN.first = PIN.old = ""; toast("Đã đổi mã PIN"); openSettings();
   }catch(e){ pinText(); $("lockErr").textContent = "Lỗi: " + e.message; }
   finally{ S.unlocking = false; }
 };
 // Khi khoá: xoá mọi nội dung đã giải mã khỏi bộ nhớ và khỏi màn hình (không chỉ ẩn đi)
 function clearSensitive(){
   Object.assign(S, {key:null, apiKey:"", cur:null, all:[], loaded:false, job:null, trKey:null, genText:"", remote:[]});
-  PIN.buf = PIN.first = ""; dropAudio();
+  PIN.buf = PIN.first = PIN.old = ""; dropAudio();
   ["meetList","vChips","spkBox","peopleList","tView","tab_min","tab_task"].forEach(id => $(id).innerHTML = "");
   ["vTitle","homeSub","minErr","minProgText","workErr","newErr","keyStatus","scanStatus","sttInfo"].forEach(id => $(id).textContent = "");
-  ["apiKey","cbText","cbPrompt","q","mTitle","mPeople","mSpeakers"].forEach(id => $(id).value = "");
+  ["apiKey","cbText","cbPrompt","q","mTitle","mPeople","mSpeakers","impText","expText"].forEach(id => $(id).value = "");
   $("claudeBox").hidden = true; $("btnPurge").hidden = true;
 }
 $("btnLock").onclick = () => { clearSensitive(); initLock(); };
@@ -685,18 +825,20 @@ document.addEventListener("visibilitychange", () => {
 
 /* ---------- Điều hướng ---------- */
 $("btnBack").onclick = () => { if (S.rec) return toast("Hãy dừng ghi âm trước");
-  if (S.screen === "scrSettings" && !S.apiKey) return toast("Cần lưu khoá API trước");
+  if (S.screen === "scrSettings" && !S.apiKey && !IN_CLAUDE) return toast("Cần lưu khoá API trước");
   openHome(); };
 $("btnSettings").onclick = openSettings;
 
 /* ---------- Cài đặt ---------- */
 function openSettings(){
   $("apiKey").value = S.apiKey; $("llmModel").value = S.model; $("writer").value = S.writer; $("llmModelLbl").hidden = S.writer !== "aai";
-  $("keyStatus").textContent = S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true;
+  $("keyStatus").textContent = IN_CLAUDE ? (S.sample ? "Claude viết biên bản ngay trong trang, tính vào hạn mức gói Claude của bạn." : "Trang chưa được phép nhờ Claude viết trực tiếp, nên dùng cách sao chép – dán.")
+    : S.apiKey ? "Đã có khoá API." : "Chưa có khoá API. Dán khoá để bắt đầu."; $("wipeConfirm").hidden = true;
   $("scanStatus").textContent = ""; $("btnPurge").hidden = true; show("scrSettings");
 }
 $("writer").onchange = () => $("llmModelLbl").hidden = $("writer").value !== "aai";
 $("btnSaveKey").onclick = async () => {
+  if (IN_CLAUDE){ S.writer = $("writer").value; lsSet("bb_cfg", JSON.stringify(await enc({apiKey:"", model:S.model, writer:S.writer}))); toast("Đã lưu cài đặt"); return openHome(); }
   const k = $("apiKey").value.trim(); if (!k) return $("keyStatus").textContent = "Chưa dán khoá.";
   $("keyStatus").textContent = "Đang kiểm tra khoá…";
   try{ const r = await fetch(AAI + "/v2/transcript?limit=1", {headers:{authorization:k}});
@@ -708,6 +850,10 @@ $("btnSaveKey").onclick = async () => {
 };
 $("btnWipe").onclick = async () => {
   if ($("wipeConfirm").hidden){ $("wipeConfirm").hidden = false; return; }
+  if (IN_CLAUDE){
+    try{ await wipeClaude(); }catch(e){ return toast("Chưa xoá hết được: " + (e.message || e.code || "lỗi kết nối") + ". Hãy bấm lại."); }
+    clearSensitive(); toast("Đã xoá toàn bộ dữ liệu"); return initLock();
+  }
   const j = S.job || await getJob(); if (j && j.id) deleteRemote(j.id);   // cố xoá nốt bản còn nằm trên máy chủ AssemblyAI
   // Chỉ xoá dữ liệu của app này: địa chỉ github.io dùng chung kho lưu trữ với mọi trang khác của cùng tài khoản
   ["bb_salt","bb_kdf","bb_check","bb_cfg","bb_job","bb_next"].forEach(lsDel);
@@ -755,8 +901,9 @@ function applyTheme(t){
 }
 document.querySelectorAll("#themeSeg button").forEach(b => b.onclick = () => { const t = b.dataset.theme; lsSet("bb_theme", t); applyTheme(t);
   toast(t === "auto" ? "Theo chế độ của điện thoại" : t === "dark" ? "Đã chuyển sang giao diện tối" : "Đã chuyển sang giao diện sáng"); });
-matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyTheme(lsGet("bb_theme") || "auto"));
-applyTheme(lsGet("bb_theme") || "auto");
+// Trong Claude, giao diện sáng/tối đi theo cài đặt của app Claude: không tự đặt lại
+if (!IN_CLAUDE){ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => applyTheme(lsGet("bb_theme") || "auto"));
+  applyTheme(lsGet("bb_theme") || "auto"); }
 
 /* ---------- Danh sách ---------- */
 const fmtDate = d => d ? d.split("-").reverse().join("/") : "";
@@ -794,7 +941,14 @@ function renderList(){
     const open = openTasks(m); if (open) meta.append(withIcon("span","", "flag", open + " đầu việc"));
     mid.append(meta);
     const st = el("span","status" + (m.minutes ? " ok" : "")); st.title = m.minutes ? "Đã có biên bản" : "Chưa có biên bản";
-    b.append(box, mid, st); b.onclick = () => openMeeting(m, "min"); group.appendChild(b); }
+    b.append(box, mid, st); b.onclick = () => openFromList(m); group.appendChild(b); }
+}
+// Trong Claude, lời thoại chỉ được tải khi mở cuộc họp
+async function openFromList(m){
+  if (!m.utts){ if (S.opening) return; S.opening = true; toast("Đang tải lời thoại…");
+    try{ m.utts = await loadTranscript(m); }catch(e){ return toast("Chưa mở được cuộc họp: " + (e.message || e.code || "lỗi kết nối")); }finally{ S.opening = false; }
+    if (S.screen !== "scrHome") return; }
+  openMeeting(m, "min");
 }
 function jobBanner(job){
   const c = el("div","card warnc");
@@ -812,7 +966,7 @@ $("q").addEventListener("input", renderList);
 
 /* ---------- Cuộc họp mới: ghi âm / chọn file ---------- */
 function dropAudio(){ S.audio = null; if (S.audioUrl){ URL.revokeObjectURL(S.audioUrl); S.audioUrl = null; } $("fileInfo").innerHTML = ""; }
-$("btnNew").onclick = () => { dropAudio(); $("newErr").textContent = "";
+$("btnNew").onclick = () => { dropAudio(); $("newErr").textContent = ""; $("impText").value = ""; $("btnImport")._sure = false; $("btnImport").textContent = "Thêm cuộc họp";
   $("mTitle").value = ""; $("mPeople").value = ""; $("mSpeakers").value = ""; $("mDate").value = new Date().toLocaleDateString("sv");
   $("btnProcess").disabled = true; $("recBox").hidden = true; $("pickBox").hidden = false; show("scrNew"); };
 $("btnPick").onclick = () => $("fileIn").click();
@@ -1007,7 +1161,7 @@ function renderBar(m){
   bApply.hidden = !waiting; bMin.hidden = !!waiting; clearTimeout(bMin._t); bMin._sure = false;
   bApply.textContent = `Cập nhật biên bản (${waiting})`;
   bMin.textContent = gen ? (S.genId === m.id ? "Đang tạo…" : "Đang tạo biên bản khác…") : (has ? "Tạo lại biên bản" : "Tạo biên bản");
-  bMin.disabled = bApply.disabled = gen;
+  bMin.disabled = bApply.disabled = gen; $("btnToClaude").hidden = !has; if (!has) $("expText").hidden = true;
   // Nút màu hồng là việc cần nhất lúc này: chưa có biên bản thì Tạo; có xác nhận đang chờ thì Cập nhật; còn lại là Tải Excel
   const main = waiting ? bApply : has ? bX : bMin;
   [bMin, bApply, bX].forEach(b => b.classList.toggle("primary", b === main));
@@ -1201,7 +1355,33 @@ async function importClaude(t){
 
 /* ---------- Viết tự động qua AssemblyAI LLM Gateway (tuỳ chọn, tốn phí) ---------- */
 function minStatus(t){ S.genText = t || ""; const on = !!t && !!S.cur && S.cur.id === S.genId; $("minProg").hidden = !on; $("minProgText").textContent = on ? t : ""; }
+// Trong Claude: nhờ Claude viết ngay trong trang (tính vào hạn mức gói Claude của người dùng). Mỗi lần gọi độc lập, tối đa 256 KiB chữ.
+const SAMPLE_ERR = {
+  not_granted: "bạn chưa cho phép trang này nhờ Claude viết. Mở lại trang và chọn Cho phép",
+  sampling_disabled: "tài khoản này chưa dùng được Claude trong trang", not_declared: "trang chưa được cấp quyền nhờ Claude viết",
+  capability_disabled: "bản app Claude này chưa hỗ trợ viết trong trang, hãy cập nhật app Claude", capability_removed: "bản app Claude này chưa hỗ trợ viết trong trang, hãy cập nhật app Claude",
+  rate_limited: "đã chạm hạn mức sử dụng Claude, hãy thử lại sau", session_expired: "phiên đăng nhập Claude đã hết hạn, hãy đăng nhập lại",
+  prompt_too_large: "lời thoại quá dài cho một lần gửi", refused: "Claude từ chối xử lý nội dung này", empty_completion: "Claude không trả về nội dung nào",
+  upstream_error: "kết nối tới Claude bị gián đoạn, hãy thử lại", cancelled: "đã dừng"
+};
+async function callSample(content, label){
+  const sample = S.sample; if (!sample) throw new Error("trang này chưa được phép nhờ Claude viết");
+  const t0 = Date.now(); let written = 0;
+  const status = () => minStatus(`${label} ${written ? `Claude đã viết ${written} ký tự.` : "Claude đang đọc, thường mất 1–3 phút."} (${Math.round((Date.now() - t0)/1000)} giây)`);
+  status(); const tick = setInterval(status, 1000); let res;
+  try{ res = await sample(content, {modelTier:"default", onText: ({text}) => { written = text.length; }}); }
+  catch(e){ throw new Error(SAMPLE_ERR[e && e.code] || ("Claude báo lỗi: " + ((e && (e.message || e.code)) || "không rõ"))); }
+  finally{ clearInterval(tick); }
+  const obj = parseLoose(res.text || ""); if (obj) return obj;
+  const err = new Error(res.truncated ? "câu trả lời bị cắt vì quá dài" : "câu trả lời không đúng dạng"); err.badJson = true; throw err;
+}
+// Cắt lời thoại sao cho mỗi lần gửi Claude trong trang không vượt giới hạn 256 KiB (tính theo byte: chữ có dấu chiếm 2–3 byte)
+function directChunkChars(lines){
+  const all = lines.join("\n"), parts = Math.ceil(te.encode(all).length / 200000);
+  return parts <= 1 ? all.length + 1 : Math.ceil(all.length / parts) + 2000;
+}
 async function callLLM(content, maxTokens, label){
+  if (S.writer === "direct") return callSample(content, label);
   let r, raw = "", j = {};
   for (let attempt = 1; attempt <= 6; attempt++){
     minStatus(label);
@@ -1244,12 +1424,13 @@ async function autoRun(m, work, okMsg, failPrefix){
     if (viewing(m)){ openMeeting(m, "min"); toast(okMsg); } else toast(`${okMsg}: ${m.title}`);
   }catch(e){
     S.genId = null; minStatus(""); const msg = failPrefix + e.message;
-    if (viewing(m)) $("minErr").textContent = msg + "\nCách thay thế: vào Cài đặt, chọn Cách viết biên bản là Claude Pro."; else toast(msg);
+    if (viewing(m)) $("minErr").textContent = msg + (IN_CLAUDE ? ".\nCách thay thế: vào Cài đặt, chọn cách viết Sao chép – dán." : "\nCách thay thế: vào Cài đặt, chọn Cách viết biên bản là Claude Pro."); else toast(msg);
   }finally{ busy(-1); if (S.cur && S.screen === "scrMeet") renderBar(S.cur); }
 }
 function generateAuto(m){
   return autoRun(m, async () => {
-    const parts = splitLines(m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`), CHUNK_CHARS); let obj;
+    const lines = m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`);
+    const parts = splitLines(lines, S.writer === "direct" ? directChunkChars(lines) : CHUNK_CHARS); let obj;
     if (parts.length === 1){
       obj = await callJSON(`${INSTR}\n\n${meetingInfo(m)}\n\n${SCHEMA}${JSON_ONLY}\n\nLỜI THOẠI:\n${parts[0]}`, 5000, "Đang viết biên bản…");
     } else {
@@ -1314,6 +1495,9 @@ function renderMinutes(m){
   const v = $("tab_min"); v.innerHTML = "";
   if (!m.minutes){ const e = el("div","card empty"); const blob = el("div","blob"); blob.innerHTML = ICON.doc;
     e.append(blob, el("h2","","Chưa có biên bản"), el("p","muted","Đặt tên người nói trước (tab Người nói) để biên bản ghi đúng tên, rồi bấm “Tạo biên bản” ở dưới."));
+    if (!IN_CLAUDE){ const b = el("button","ghost","Hoặc: Sao chép sang Claude"); b.onclick = () => toClaude(m);
+      const a = el("a","","Mở Biên Bản Họp trong Claude"); a.href = CLAUDE_APP; a.target = "_blank"; a.rel = "noopener"; a.style.cssText = "color:var(--link);font-weight:600";
+      e.append(b, el("p","muted","Dùng khi bạn làm biên bản trong app Claude: bấm nút trên, mở trang dưới đây, chọn Cuộc họp mới rồi dán."), a); }
     v.appendChild(e); return; }
   const x = m.minutes;
   const card = (title, ...nodes) => { const c = el("div","card"); c.append(el("h2","",title), ...nodes); v.appendChild(c); return c; };
@@ -1422,13 +1606,79 @@ $("btnCopy").onclick = async () => { const m = S.cur;
   try{ await navigator.clipboard.writeText(txt); toast("Đã sao chép lời thoại"); }
   catch(e){ $("minErr").textContent = "Điện thoại chưa cho sao chép tự động: " + e.message; } };
 
+/* ---------- Chuyển cuộc họp từ trang web sang app Claude ---------- */
+// Gói chuyển là một chuỗi chữ đi qua bộ nhớ tạm: "BBH1:" + gzip + base64 (gọn hơn 3–4 lần), hoặc "BBH0:" + JSON cho máy chưa có CompressionStream.
+async function packMeeting(m){
+  const json = JSON.stringify({bbh:1, m}, (k, v) => k[0] === "_" || k === "cho" || k === "truoc" || k === "lastChanges" ? undefined : v);
+  return CAN_GZIP ? "BBH1:" + b64(await gzip(te.encode(json))) : "BBH0:" + json;
+}
+async function unpackMeeting(text){
+  const t = String(text || "").trim(); let json;
+  if (t.startsWith("BBH1:")){
+    if (!CAN_GZIP) throw new Error("app Claude trên máy này quá cũ để đọc gói nén, hãy cập nhật iPhone hoặc app Claude");
+    try{ json = td.decode(await gunzip(unb64(t.slice(5).replace(/\s+/g, "")))); }
+    catch(e){ throw new Error("phần vừa dán bị thiếu hoặc hỏng. Hãy bấm lại Sao chép sang Claude ở trang web rồi dán lại"); }
+  } else if (t.startsWith("BBH0:")) json = t.slice(5);
+  else throw new Error("đây không phải cuộc họp sao chép từ trang chuyển giọng nói. Ở trang đó, bấm Sao chép sang Claude rồi dán vào đây");
+  let m; try{ m = JSON.parse(json).m; }catch(e){ throw new Error("phần vừa dán bị thiếu hoặc hỏng"); }
+  if (!m || !Array.isArray(m.utts)) throw new Error("gói không có lời thoại");
+  // Chỉ nhận các trường đã biết và ép kiểu từng trường: đây là dữ liệu đi từ ngoài vào
+  const str = (v, n) => typeof v === "string" ? v.slice(0, n) : "";
+  const utts = m.utts.slice(0, 30000).map(u => ({s: str(u && u.s, 8) || "A", t: str(u && u.t, 20000), a: +(u && u.a) || 0, b: +(u && u.b) || 0})).filter(u => u.t);
+  if (!utts.length) throw new Error("gói không có lời thoại");
+  const names = {}; for (const s of [...new Set(utts.map(u => u.s))].sort()) names[s] = str(m.names && m.names[s], 80);
+  const x = m.minutes, hasMin = x && typeof x === "object" && !Array.isArray(x) && (x.tom_tat || (x.diem_chinh || []).length);
+  return { id: /^[\w-]{8,64}$/.test(m.id) ? m.id : crypto.randomUUID(), created: +m.created || Date.now(), title: str(m.title, 200) || "Cuộc họp",
+    date: /^\d{4}-\d\d-\d\d$/.test(m.date) ? m.date : "", people: str(m.people, 500), speakers: +m.speakers || null, utts, names,
+    durationText: str(m.durationText, 12), model: str(m.model, 60), sttOpts: Array.isArray(m.sttOpts) ? m.sttOpts.map(o => str(o, 40)).filter(Boolean).slice(0, 5) : [],
+    minutes: hasMin ? x : null, lich_su: hasMin && Array.isArray(m.lich_su) ? m.lich_su : [] };
+}
+// Trang web: sao chép gói vào bộ nhớ tạm. iPhone chỉ cho sao chép ngay trong thao tác bấm, nên việc nén được đưa vào dưới dạng lời hứa.
+async function toClaude(m){
+  const box = $("expText"); box.hidden = true; box.value = "";
+  const done = () => toast("Đã sao chép. Mở Biên Bản Họp trong Claude → Cuộc họp mới → Dán");
+  const pack = packMeeting(m);
+  try{ await navigator.clipboard.write([new ClipboardItem({"text/plain": pack.then(t => new Blob([t], {type:"text/plain"}))})]); return done(); }catch(e){}
+  const text = await pack;
+  try{ await navigator.clipboard.writeText(text); return done(); }
+  catch(e){ box.value = text; box.hidden = false; box.focus(); box.select(); toast("Chưa tự sao chép được: giữ tay lên ô chữ → Chọn tất cả → Sao chép"); }
+}
+$("btnToClaude").onclick = () => toClaude(S.cur);
+// Trong Claude: nhận gói vừa dán
+$("btnImport").onclick = async () => { const b = $("btnImport"); $("newErr").textContent = ""; if (b.disabled) return;
+  if (!$("impText").value.trim()) return $("newErr").textContent = "Chưa dán gì vào ô. Chạm giữ vào ô, chọn Dán.";
+  b.disabled = true;
+  try{
+    const m = await unpackMeeting($("impText").value), old = S.all.find(x => x.id === m.id);
+    if (old && !b._sure){ b._sure = true; b.textContent = "Bấm lần nữa để thay"; return $("newErr").textContent = `Cuộc họp “${old.title}” đã có trong Claude. Bấm lần nữa để thay bằng bản vừa dán (các chỗ đã sửa trong Claude sẽ mất).`; }
+    b.textContent = "Đang lưu vào Claude…"; await saveMeeting(m); if (old) dropParts(old.id, old._t);
+    $("impText").value = ""; S.trKey = null; openMeeting(m, m.minutes ? "min" : "spk"); toast(m.minutes ? "Đã thêm cuộc họp" : "Đã thêm. Kiểm tra tên người nói rồi bấm Tạo biên bản");
+  }catch(e){ $("newErr").textContent = "Chưa thêm được: " + (e.message || e.code || "lỗi không rõ") + "."; }
+  finally{ b.disabled = false; if (!b._sure || S.screen !== "scrNew" || b.textContent !== "Bấm lần nữa để thay"){ b._sure = false; b.textContent = "Thêm cuộc họp"; } }
+};
+// Lưu một file về máy. Trong Claude, trang không tự tải file được: phải nhờ app Claude lưu (người dùng bấm đồng ý).
+async function saveFile(blob, filename){
+  if (IN_CLAUDE){
+    const d = await cap("downloads"); if (!d) throw new Error("trang này chưa được phép lưu file");
+    try{ await d.save({filename, data: blob}); return true; }
+    catch(e){ if (e && e.code === "declined") return false; throw new Error((e && (e.message || e.code)) || "không lưu được file"); }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); return true;
+}
+
 /* ---------- Xuất Excel ---------- */
 // Thư viện Excel (ExcelJS) nặng gần 1 MB nên không tải lúc mở app; tải ngầm khi mở một cuộc họp
 let excelP;
+const EXCEL_SRI = "sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz";   // mã băm của exceljs.min.js; đổi thư viện thì tính lại (xem AGENTS.md)
 function loadExcel(){
   return excelP ||= new Promise((res, rej) => { if (window.ExcelJS) return res();
-    const s = document.createElement("script"); s.src = "exceljs.min.js"; s.onload = () => res();
-    s.onerror = () => { excelP = null; s.remove(); rej(new Error("không tải được thư viện Excel")); }; document.head.appendChild(s); });
+    const load = (src, next, sri) => { const s = document.createElement("script"); s.src = src; if (sri){ s.integrity = sri; s.crossOrigin = "anonymous"; } s.onload = () => res();
+      s.onerror = () => { s.remove(); if (next) return next(); excelP = null; rej(new Error("không tải được thư viện Excel")); }; document.head.appendChild(s); };
+    // Trang web: file nằm ngay trong kho mã. Trong Claude: trang chỉ được nạp script từ vài nguồn cho phép, nên lấy đúng bản 4.4.0 từ cdnjs
+    // (dự phòng: jsDelivr), kèm mã băm của chính file exceljs.min.js trong kho: nguồn ngoài trả về file khác một byte là trình duyệt từ chối chạy.
+    if (!IN_CLAUDE) return load("exceljs.min.js");
+    load("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js", () => load("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js", null, EXCEL_SRI), EXCEL_SRI); });
 }
 const XL_FILL = {type:"pattern", pattern:"solid", fgColor:{argb:"FFFDE6EE"}};   // hồng nhạt của app
 const XL_WRAP = {wrapText:true, vertical:"top"};
@@ -1476,18 +1726,18 @@ async function exportExcel(m){
   excelTableSheet(wb, "Lời thoại", [10,18,90], ["Thời điểm","Người nói","Nội dung"], m.utts.map(u => [hms(u.a/1000), who(m,u.s), u.t]));
   const blob = new Blob([await wb.xlsx.writeBuffer()], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   const slug = (m.title || "cuoc-hop").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `BienBan_${m.date || "ngay"}_${slug}.xlsx`;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  return saveFile(blob, `BienBan_${m.date || "ngay"}_${slug}.xlsx`);
 }
 $("btnExcel").onclick = () => { $("minErr").textContent = "";
-  exportExcel(S.cur).then(() => toast("Đang mở file Excel…"),
+  exportExcel(S.cur).then(saved => { if (saved) toast(IN_CLAUDE ? "Đã chuyển file Excel cho app Claude lưu" : "Đang mở file Excel…"); },
     e => { $("minErr").textContent = "Chưa tạo được file Excel: " + e.message + ". Kiểm tra mạng rồi bấm lại."; }); };
 
 /* ---------- Bản mới và chạy khi không có mạng ---------- */
 // sw.js giữ một bản của app trên máy (mở được khi mất mạng) và luôn hỏi máy chủ trước, nên lần mở sau khi phát hành là có bản mới.
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+if (!IN_CLAUDE && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 // App đang mở sẵn thì không tự đổi sang bản mới: hỏi máy chủ (nhiều nhất 15 phút một lần) và mời người dùng bấm cập nhật.
 async function checkUpdate(){
+  if (IN_CLAUDE) return;   // trong Claude, trang được cập nhật qua lần phát hành Artifact
   if (S.updAt && Date.now() - S.updAt < 15*60*1000) return; S.updAt = Date.now();
   try{
     const r = await fetch(location.pathname, {cache:"no-store"}); if (!r.ok) return;
@@ -1499,8 +1749,9 @@ $("updBar").onclick = () => { if (S.busy || S.rec) return toast("Đang xử lý,
   location.replace(location.pathname + "?v=" + encodeURIComponent(S.newVer)); };   // "?v=" ép trình duyệt tải bản mới thay vì bản nó đang giữ
 
 /* ---------- Khởi động ---------- */
-$("appVer").textContent = "Phiên bản " + APP_VERSION;
+$("appVer").textContent = "Phiên bản " + APP_VERSION + (IN_CLAUDE ? " · chạy trong Claude" : "");
 if (!window.crypto || !crypto.subtle) document.body.innerHTML = "<p style='padding:20px'>Trình duyệt này không hỗ trợ mã hoá. Hãy mở bằng Safari trên iPhone (iOS 15 trở lên).</p>";
+else if (IN_CLAUDE) bootClaude();
 else { initLock(); checkUpdate(); }
 </script>
 </body>
