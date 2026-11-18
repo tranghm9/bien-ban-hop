@@ -42,6 +42,10 @@ const MINUTES = {chu_de:'Tiến độ quý 4', muc_dich:'Rà soát', thanh_phan:
   viec_theo_doi:[{cong_viec:'Gửi report', nguoi_phu_trach:'Chị Lan', han:'cuối tháng [cần xác nhận]', uu_tien:'Cao', ghi_chu:''},
     {cong_viec:'Xác nhận ngân sách', nguoi_phu_trach:'Anh Minh', han:'20/11/2026', uu_tien:'Trung bình', ghi_chu:''}],
   ke_hoach:[{noi_dung:'Họp lại', thoi_gian:'Tuần sau', ghi_chu:''}], can_xac_nhan:[{noi_dung:'Cuối tháng là ngày nào?', thoi_diem:'00:00:10'}]};
+// File ghi âm thử: cùng một file im lặng, thêm vài byte ở cuối để mỗi file có kích thước riêng (nhận ra file nào được gửi lên)
+const WAV = fs.readFileSync(path.join(__dirname, 'im-lang.wav'));
+const wavFile = (name, extra = 0) => ({name, mimeType: 'audio/wav', buffer: Buffer.concat([WAV, Buffer.alloc(extra)])});
+const utt = (speaker, text, start, end) => ({speaker, text, start, end});
 const fenced = obj => 'Đây là kết quả:\n```json\n' + JSON.stringify(obj, null, 1) + '\n```';
 const ok = (cond, msg) => { if (!cond) throw new Error('SAI: ' + msg); };
 const flat = ws => { const out = []; ws.eachRow(r => r.eachCell(c => out.push(String(c.value)))); return out.join('|'); };
@@ -86,7 +90,8 @@ function claudeStub(opts){
 
 let browser, srv;
 // Mở app trong một "điện thoại" mới tinh.
-// opts: utterances, duration, poll(n), pollFail(n), create(body,n), llm(body,n), path, uploadHold(), remote[{id, audio_url}], delFail(id)
+// opts: utterances, duration, poll(n, id), pollFail(n), create(body,n), llm(body,n), path, uploadHold(), uploadFail(n), remote[{id, audio_url}], delFail(id),
+//       parts[k] = {utterances, duration, status, error}: kết quả riêng của bản chép lời thứ k+1 (t1, t2...)
 //       ctx (dùng lại "điện thoại" của một lượt open trước), claude {noDb, noUser, noSample} (mở bản chạy trong Claude), sample(input, n), save(filename, base64)
 async function open(opts = {}){
   const ctx = opts.ctx || await browser.newContext({viewport:{width:390, height:844}, permissions:['clipboard-read','clipboard-write','microphone']});
@@ -102,18 +107,24 @@ async function open(opts = {}){
     const claudeOK = page.url().includes('/__claude/') && /^https:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com|cdnjs\.cloudflare\.com\/ajax\/libs\/exceljs\/4\.4\.0\/|cdn\.jsdelivr\.net\/npm\/exceljs@4\.4\.0\/)/.test(u);   // nguồn Claude cho phép
     if (!u.startsWith(srv.url) && !/^https:\/\/(api|llm-gateway)\.assemblyai\.com\//.test(u) && !/^(blob|data):/.test(u) && !page.url().includes('/__old/') && !claudeOK) errors.push('gọi ra ngoài: ' + u);
     if (page.url().includes('/__claude/') && /assemblyai/.test(u)) errors.push('bản trong Claude không được gọi AssemblyAI: ' + u); });
-  const calls = {upload:0, create:[], poll:0, del:0, llm:[], list:0, cdn:[]};
+  const calls = {upload:0, create:[], poll:0, del:0, llm:[], list:0, cdn:[], delIds:[], uploadSizes:[]};
   const remote = (opts.remote || []).map(x => ({...x}));   // các bản chép lời "đang nằm trên máy chủ AssemblyAI", mới trước
   await page.route('https://api.assemblyai.com/**', async r => { const u = r.request().url(), m = r.request().method();
-    if (u.includes('/v2/upload')){ calls.upload++; if (opts.uploadHold) await opts.uploadHold(); return r.fulfill({json:{upload_url:'https://cdn.assemblyai.com/upload/x'}}); }
+    if (u.includes('/v2/upload')){ calls.upload++; calls.uploadSizes.push((r.request().postDataBuffer() || []).length); if (opts.uploadHold) await opts.uploadHold();
+      if (opts.uploadFail && opts.uploadFail(calls.upload)) return r.fulfill({status:500, json:{error:'máy chủ bận'}});
+      return r.fulfill({json:{upload_url:'https://cdn.assemblyai.com/upload/x'}}); }
     if (m === 'POST' && u.endsWith('/v2/transcript')){ const body = JSON.parse(r.request().postData()); calls.create.push(body);
-      return r.fulfill(opts.create ? opts.create(body, calls.create.length) : {json:{id:'t1', status:'queued'}}); }
-    if (m === 'DELETE'){ calls.del++; const id = u.split('/').pop(); if (opts.delFail && opts.delFail(id)) return r.fulfill({status:500, json:{error:'máy chủ bận'}});
+      return r.fulfill(opts.create ? opts.create(body, calls.create.length) : {json:{id:'t' + calls.create.length, status:'queued'}}); }
+    if (m === 'DELETE'){ calls.del++; const id = u.split('/').pop(); calls.delIds.push(id); if (opts.delFail && opts.delFail(id)) return r.fulfill({status:500, json:{error:'máy chủ bận'}});
       const it = remote.find(x => x.id === id); if (it) it.audio_url = 'http://deleted_by_user';   // bản đã xoá chỉ còn "vỏ"
       return r.fulfill({json:{}}); }
-    if (m === 'GET' && u.includes('/v2/transcript/t1')){ calls.poll++;
+    const g = m === 'GET' && u.match(/\/v2\/transcript\/(t\d+)$/);
+    if (g){ calls.poll++;
       if (opts.pollFail && opts.pollFail(calls.poll)) return r.abort('failed');
-      return r.fulfill({json: opts.poll ? opts.poll(calls.poll) : {id:'t1', status:'completed', audio_duration: opts.duration || 600, utterances: opts.utterances || fakeUtterances(2)}}); }
+      const pt = opts.parts && opts.parts[+g[1].slice(1) - 1];
+      return r.fulfill({json: opts.poll ? opts.poll(calls.poll, g[1])
+        : pt ? {id:g[1], status: pt.status || 'completed', error: pt.error, audio_duration: pt.duration, utterances: pt.utterances || []}
+        : {id:g[1], status:'completed', audio_duration: opts.duration || 600, utterances: opts.utterances || fakeUtterances(2)}}); }
     // Danh sách: mỗi trang 2 bản, prev_url trỏ tới trang cũ hơn (như AssemblyAI)
     calls.list++; const from = +(new URL(u).searchParams.get('skip') || 0), rows = remote.slice(from, from + 2);
     return r.fulfill({json:{transcripts: rows, page_details:{limit:2, result_count: rows.length,
@@ -265,7 +276,7 @@ const tests = {
     await t.until(() => S.all.some(m => m.minutes), 'viết xong ở nền', 60, 200);
     ok(await t.ev(() => S.screen) === 'scrNew' && await t.visible('#btnStop'), 'viết xong không được tự nhảy khỏi màn ghi âm');
     ok(t.calls.llm.length >= 3, 'họp 15 phút phải chia nhiều phần rồi gộp, thực tế ' + t.calls.llm.length + ' lượt gọi');
-    await p.click('#btnStop'); await t.until(() => !!S.audio && !S.rec, 'dừng ghi âm', 5); ok(await t.visible('.filechip'), 'dừng xong có file ghi âm'); await t.close(); },
+    await p.click('#btnStop'); await t.until(() => S.audios.length === 1 && !S.rec, 'dừng ghi âm', 5); ok(await t.visible('.filechip'), 'dừng xong có file ghi âm'); await t.close(); },
 
   'khoá app: xoá hết nội dung đã giải mã khỏi màn hình và bộ nhớ': async () => { const t = await open(), p = t.page; await t.firstRun(); await t.process({title:'Họp mật'}); await t.claudeGen();
     await p.click('#btnMinutes'); await p.click('#btnMinutes'); await p.waitForTimeout(150);   // tạo lại (bấm hai lần): để lại một yêu cầu đang chờ
@@ -401,6 +412,99 @@ const tests = {
       ok(got === 12 * 1024 * 1024 && out.res.auth === 'khoa-thu', 'máy chủ nhận đủ file, khoá gửi nguyên dạng (không có chữ Bearer)');
       ok(out.seen.length >= 2 && out.seen[out.seen.length - 1] === 1 && out.seen.every((v, i) => !i || v >= out.seen[i - 1]), 'tiến độ thật tăng dần tới 100%: ' + JSON.stringify(out.seen));
     }finally{ await ctx.close(); api.close(); web.close(); } },
+
+  'nhiều file ghi âm: chọn cùng lúc, sắp thứ tự, ghép lời thoại, tách nhãn người nói theo phần, ghi rõ file lỗi': async () => {
+    const parts = [{duration: 120, utterances: [utt('A','Phần một, anh Minh mở đầu cuộc họp về ngân sách.',0,5000), utt('B','Phần một, chị Lan báo cáo số liệu.',5000,9000)]},
+      {duration: 60, utterances: [utt('A','Phần hai, chị Lan nói tiếp về hạn chót.',0,4000), utt('B','Phần hai, anh Minh chốt lại.',4000,8000)]},
+      {status: 'error', error: 'File không đúng định dạng âm thanh.'}];
+    const t = await open({parts}), p = t.page; await t.firstRun();
+    await p.click('#btnNew'); await p.setInputFiles('#fileIn', [wavFile('Ghi am 10.wav', 30), wavFile('Ghi am 2.wav', 20), wavFile('Ghi am 1.wav', 10)]);
+    const names = () => t.ev(() => S.audios.map(a => a.name).join('|'));
+    ok(await names() === 'Ghi am 1.wav|Ghi am 2.wav|Ghi am 10.wav', 'chọn nhiều file cùng lúc: xếp theo tên, số 2 trước số 10');
+    ok((await p.textContent('#btnProcess')) === 'Chuyển 3 file thành chữ' && await t.visible('#orderHint') && await t.visible('#addMore') && !(await t.visible('#pickBox')), 'nút và gợi ý cho nhiều file');
+    await p.click('#fileInfo .filechip >> nth=0 >> button[aria-label$="xuống sau"]'); ok(await names() === 'Ghi am 2.wav|Ghi am 1.wav|Ghi am 10.wav', 'đổi thứ tự bằng mũi tên');
+    await p.click('#fileInfo .filechip >> nth=1 >> button[aria-label$="lên trước"]'); ok(await names() === 'Ghi am 1.wav|Ghi am 2.wav|Ghi am 10.wav', 'đổi lại thứ tự');
+    await p.setInputFiles('#fileIn', wavFile('Thua.wav', 40)); ok(await t.ev(() => S.audios.length) === 4, 'thêm file sau khi đã chọn');
+    await p.click('#fileInfo .filechip >> nth=3 >> button:text-is("Bỏ")'); ok(await names() === 'Ghi am 1.wav|Ghi am 2.wav|Ghi am 10.wav', 'bỏ một file');
+    await p.fill('#mTitle', 'Họp nhiều file'); await p.fill('#mSpeakers', '3'); await p.click('#btnProcess');
+    await t.until(() => S.screen === 'scrMeet', 'chuyển 3 file thành chữ');
+    ok(t.calls.upload === 3 && t.calls.create.length === 3 && t.calls.create.every(b => b.speaker_options.min_speakers_expected === 1 && b.speaker_options.max_speakers_expected === 5), 'mỗi file gửi một lần; mỗi phần có thể ít người nói hơn cả cuộc họp');
+    ok(t.calls.uploadSizes.join() === [10, 20, 30].map(x => WAV.length + x).join(), 'gửi đúng thứ tự đã sắp: ' + t.calls.uploadSizes.join());
+    const m = await t.ev(() => ({parts: S.cur.parts, utts: S.cur.utts, names: Object.keys(S.cur.names), dur: S.cur.durationText}));
+    ok(m.parts.length === 3 && m.parts[0].name === 'Ghi am 1.wav' && m.parts[1].dur === 60 && /không đúng định dạng/.test(m.parts[2].err), 'ghi lại 3 phần, phần lỗi có lý do');
+    ok(m.names.join() === 'A,B,C,D' && m.utts[2].s === 'C' && m.utts[2].p === 1 && m.utts[2].a === 120000 && m.utts[0].p === undefined, 'phần 2 lấy nhãn mới C, D và mốc giờ nối tiếp phần 1');
+    ok(m.dur === '00:03:00', 'tổng thời lượng: ' + m.dur);
+    await t.until(() => localStorage.getItem('bb_job') === null, 'xoá cả 3 bản trên máy chủ', 10);
+    ok(t.calls.delIds.slice().sort().join() === 't1,t2,t3', 'xoá cả bản bị lỗi: ' + t.calls.delIds.join());
+    ok(await t.visible('#spkMulti') && (await p.textContent('#spkBox')).includes('Người C · phần 2'), 'tab Người nói giải thích nhãn theo phần');
+    await p.fill('#name_A', 'Anh Minh'); await p.fill('#name_B', 'Chị Lan'); await p.fill('#name_C', 'Chị Lan'); await p.fill('#name_D', 'Anh Minh'); await p.click('#btnSaveNames');
+    await t.until(() => S.cur.names.D === 'Anh Minh' && S.screen === 'scrMeet', 'lưu tên người nói', 10); await p.waitForTimeout(100);
+    const chips = await p.textContent('#vChips'); ok(chips.includes('2 người nói') && chips.includes('1/3 file chưa chuyển được'), 'gộp người nói qua các phần; báo file lỗi: ' + chips);
+    await p.click('.seg [data-tab="tr"]');
+    ok(await t.ev(() => document.querySelectorAll('#tView .partsep').length) === 2 && (await p.textContent('#partsBox')).includes('không đúng định dạng'), 'lời thoại có vạch chia phần; danh sách file ghi rõ file lỗi');
+    const prompt = await t.claudeGen();
+    ok(prompt.includes('--- Phần 2/3 ---') && prompt.includes('ghi thành 3 file') && prompt.includes('1 file ghi âm không chuyển được') && prompt.includes('[00:02:00] Chị Lan: Phần hai'), 'yêu cầu gửi Claude có đánh dấu phần, mốc giờ liên tục, tên đã gộp');
+    const {wb} = await t.excel(), lt = wb.getWorksheet('Lời thoại');
+    ok(lt.getCell('A1').value === 'Phần' && lt.getCell('A4').value === 2 && lt.getCell('C4').value === 'Chị Lan' && flat(wb.getWorksheet('Biên bản')).includes('Ghi am 10.wav (chưa chuyển được)'), 'Excel có cột Phần và danh sách file');
+    ok(await t.ev(async () => { const m2 = await unpackMeeting(await packMeeting(S.cur)); return m2.parts.length === 3 && m2.parts[2].err.length > 0 && m2.utts[2].p === 1 && m2.utts[0].p === undefined; }), 'gói sang Claude giữ thông tin các phần');
+    await t.close(); },
+
+  'nhiều file: mạng hỏng khi gửi file 2 thì gửi tiếp được; app bị tải lại thì chọn lại file còn thiếu hoặc lấy phần đã gửi': async () => {
+    const parts = [{duration: 60, utterances: [utt('A','Phần một của cuộc họp.',0,3000)]}, {duration: 30, utterances: [utt('A','Phần hai của cuộc họp.',0,3000)]}];
+    const start = async title => { const t = await open({parts, uploadFail: n => n === 2}), p = t.page; await t.firstRun();
+      await p.click('#btnNew'); await p.setInputFiles('#fileIn', [wavFile('a.wav', 1), wavFile('b.wav', 2)]); await p.fill('#mTitle', title); await p.click('#btnProcess');
+      await t.until(() => !document.getElementById('btnWorkRetry').hidden, 'báo lỗi khi gửi file 2', 20); return t; };
+    // 1) Còn ở màn xử lý: bấm Thử lại
+    let t = await start('Họp gửi tiếp'), p = t.page;
+    ok((await p.textContent('#workErr')).includes('Đã gửi 1/2 file') && await t.ev(() => !!localStorage.getItem('bb_job')), 'báo đã gửi 1/2 file, đã ghi nhớ việc dở');
+    await p.click('#btnWorkRetry'); await t.until(() => S.screen === 'scrMeet', 'gửi tiếp rồi xong');
+    ok(t.calls.upload === 3 && t.calls.create.length === 2 && await t.ev(() => S.cur.parts.length === 2 && !S.cur.parts.some(x => x.err) && S.cur.utts[1].a === 60000), 'không gửi lại file 1, kết quả đủ 2 phần'); await t.close();
+    // 2) App bị tải lại: chọn lại file còn thiếu
+    t = await start('Họp bị ngắt'); p = t.page; await p.reload(); await t.unlock();
+    const banner = await p.textContent('#meetList');
+    ok(banner.includes('Đã gửi 1/2 file') && banner.includes('Còn thiếu: b.wav') && banner.includes('Chọn lại 1 file còn thiếu'), 'danh sách báo file còn thiếu: ' + banner);
+    const [fc] = await Promise.all([p.waitForEvent('filechooser'), p.click('#meetList button:has-text("Chọn lại")')]); await fc.setFiles(wavFile('b.wav', 2));
+    await t.until(() => S.screen === 'scrMeet', 'gửi file chọn lại rồi xong');
+    ok(t.calls.create.length === 2 && t.calls.uploadSizes[t.calls.uploadSizes.length - 1] === WAV.length + 2
+      && await t.ev(() => S.cur.title === 'Họp bị ngắt' && S.cur.parts.map(x => x.name + ':' + !x.err).join() === 'a.wav:true,b.wav:true'), 'đúng thứ tự, không tạo lại phần 1'); await t.close();
+    // 3) Không còn file: lấy kết quả phần đã gửi
+    t = await start('Họp thiếu phần'); p = t.page; await p.reload(); await t.unlock();
+    await p.click('#meetList button:has-text("Lấy kết quả phần đã gửi")'); await t.until(() => S.screen === 'scrMeet', 'lấy phần đã gửi');
+    ok(await t.ev(() => S.cur.parts.length === 2 && !S.cur.parts[0].err && /Chưa gửi được/.test(S.cur.parts[1].err)), 'phần chưa gửi được ghi rõ');
+    await t.until(() => localStorage.getItem('bb_job') === null, 'dọn máy chủ', 10); ok(t.calls.delIds.join() === 't1', 'xoá bản trên máy chủ: ' + t.calls.delIds.join()); await t.close(); },
+
+  'thêm file ghi âm vào cuộc họp đã có biên bản': async () => {
+    const parts = [{duration: 600, utterances: fakeUtterances(2)}, {duration: 90, utterances: [utt('A','Phần bổ sung: chốt hạn nộp báo cáo.',0,4000), utt('B','Đồng ý.',4000,6000)]}];
+    const t = await open({parts}), p = t.page; await t.firstRun(); await t.process({title:'Họp có phần sau', people:'anh Minh, chị Lan', speakers:4});
+    await p.fill('#name_A', 'Anh Minh'); await p.click('#btnSaveNames'); await t.claudeGen();
+    await p.click('#btnAddAudio');
+    ok((await p.textContent('#topTitle')) === 'Thêm file ghi âm' && !(await t.visible('#metaBox')) && (await p.textContent('#appendInfo')).includes('Họp có phần sau'), 'màn thêm file ghi rõ thêm vào cuộc họp nào');
+    await p.click('#btnBack'); ok(await t.ev(() => S.screen === 'scrMeet' && !S.appendTo), 'quay lại thì về cuộc họp');
+    await p.click('#btnAddAudio'); await p.setInputFiles('#fileIn', path.join(__dirname, 'im-lang.wav'));
+    ok((await p.textContent('#btnProcess')) === 'Chuyển thành chữ và thêm vào cuộc họp', 'nút ghi rõ việc sẽ làm'); await p.click('#btnProcess');
+    await t.until(() => S.screen === 'scrMeet' && (S.cur.parts || []).length === 2, 'thêm phần mới');
+    const m = await t.ev(() => ({n: S.all.length, keys: Object.keys(S.cur.names), name: S.cur.names.A, last: S.cur.utts[S.cur.utts.length - 2], flag: S.cur.loiThoaiMoi, min: !!S.cur.minutes, dur: S.cur.durationText}));
+    ok(m.n === 1 && m.min && m.flag === true && m.name === 'Anh Minh', 'vẫn một cuộc họp, giữ biên bản và tên đã đặt, đánh dấu có lời thoại mới');
+    ok(m.keys.join() === 'A,B,C,D,E,F' && m.last.s === 'E' && m.last.p === 1 && m.last.a === 600000 && m.dur === '00:11:30', 'phần mới nối sau 10 phút đầu, nhãn mới E, F: ' + JSON.stringify(m));
+    ok(t.calls.create[0].speaker_options.min_speakers_expected === 3 && t.calls.create[1].speaker_options.min_speakers_expected === 1, 'file thêm vào có thể ít người nói hơn');
+    await p.click('.seg [data-tab="min"]'); ok((await p.textContent('#tab_min')).includes('Lời thoại vừa có thêm phần mới'), 'biên bản báo chưa có phần mới');
+    await p.click('#btnMinutes'); await p.click('#btnMinutes'); await p.waitForTimeout(150); ok((await t.clip()).includes('--- Phần 2/2 ---'), 'tạo lại biên bản: gửi cả phần mới');
+    await t.setClip(fenced(MINUTES)); await p.click('#cbPaste'); await t.until(() => !S.cur.loiThoaiMoi && !!S.cur.minutes, 'tạo lại xong thì hết thông báo');
+    ok(await t.ev(() => { const old = {utts:[{s:'A', t:'x', a:0, b:5000}], names:{A:'Lan'}, durationText:'00:10:00'};
+      const k = mergeParts(old, {files:[{name:'b.m4a'}], parts:[{id:'x', opts:[]}]}, [{res:{audio_duration:30, utterances:[{speaker:'A', text:'y', start:0, end:1000}]}}]);
+      return k === 1 && old.parts.length === 2 && old.parts[0].dur === 600 && old.utts[1].a === 600000 && old.utts[1].s === 'B' && old.utts[1].p === 1 && old.durationText === '00:10:30'; }),
+      'cuộc họp lưu bằng bản cũ (không có danh sách phần): lời thoại đang có thành phần 1');
+    await t.close(); },
+
+  'việc dở lưu bằng bản cũ (một file) vẫn lấy lại được': async () => { const t = await open(), p = t.page; await t.firstRun();
+    await t.ev(() => setJob({id:'t1', mid:'mcu-12345678', meta:{title:'Họp từ bản cũ', date:'2026-11-10', people:'', speakers:null}, started: Date.now(), opts:['speaker_options']}));
+    await p.reload(); await t.unlock();
+    ok((await p.textContent('#meetList')).includes('Họp từ bản cũ') && await p.locator('#meetList button:has-text("Lấy kết quả")').isVisible(), 'danh sách nhận việc dở dạng cũ');
+    await p.click('#meetList button:has-text("Lấy kết quả")'); await t.until(() => S.screen === 'scrMeet', 'lấy kết quả việc dở dạng cũ');
+    ok(await t.ev(() => S.cur.id === 'mcu-12345678' && S.cur.title === 'Họp từ bản cũ' && S.cur.utts.length > 0 && S.cur.sttOpts.join() === 'speaker_options') && t.calls.upload === 0, 'dựng đúng cuộc họp, không tải lên lại');
+    await t.until(() => localStorage.getItem('bb_job') === null, 'xoá bản trên máy chủ', 10);
+    await t.ev(() => setJob({id:'t9', del:true})); await p.reload(); await t.unlock(); await t.until(() => localStorage.getItem('bb_job') === null, 'xoá bản chờ xoá dạng cũ', 10);
+    ok(t.calls.delIds.join() === 't1,t9', 'xoá cả bản chờ xoá lưu bằng bản cũ: ' + t.calls.delIds.join()); await t.close(); },
 
   'trong Claude: nhận cuộc họp từ trang web, Claude viết biên bản ngay trong trang, lưu Excel, mở lại': async () => {
     const built = artifact.build(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));

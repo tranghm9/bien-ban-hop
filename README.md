@@ -1,6 +1,6 @@
 # Biên bản họp
 
-Ứng dụng web cá nhân chạy trên iPhone: ghi âm cuộc họp (hoặc chọn file ghi âm), chuyển thành chữ có tách người nói, viết biên bản, theo dõi đầu việc và xuất file Excel.
+Ứng dụng web cá nhân chạy trên iPhone: ghi âm cuộc họp (hoặc chọn file ghi âm; một cuộc họp có thể gồm nhiều file), chuyển thành chữ có tách người nói, viết biên bản, theo dõi đầu việc và xuất file Excel.
 
 App có hai nơi dùng, chung một mã:
 

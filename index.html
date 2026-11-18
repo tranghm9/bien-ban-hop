@@ -168,6 +168,18 @@ button:disabled{opacity:.45;cursor:default;transform:none}
 .filechip>div{min-width:0;flex:1}
 .filechip b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .filechip a{color:var(--link);font-size:13.5px}
+.filechip .ic{font-weight:700;font-size:15px;flex:none}
+#fileInfo,.filechip{min-width:0}   /* tên file dài phải được cắt gọn, không đẩy cả màn hình rộng ra */
+#fileInfo .filechip b{white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}   /* tối đa 2 dòng: thấy được phần cuối tên như "phần 2" */
+.filechip>.ordbtns{display:flex;gap:0;flex:none;min-width:auto;align-items:center}
+.ordbtns button{padding:8px 9px;min-width:36px;font-size:15px}
+.addmore{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.addmore button{padding:12px 10px;font-size:14.5px}
+.partsep{justify-self:center;font-size:12.5px;font-weight:600;color:var(--muted);background:var(--soft);border-radius:99px;padding:4px 12px;margin:6px 0}
+.partlist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.partlist li{display:grid;gap:1px;font-size:14px;min-width:0}
+.partlist li span{overflow-wrap:anywhere}
+.partlist .err{font-size:13px;margin:0}
 .hint{display:flex;gap:10px;background:var(--soft2);border-radius:16px;padding:12px 14px;font-size:13.5px;color:var(--muted)}
 .hint svg{color:var(--link);margin-top:2px;width:18px;height:18px}
 details.card summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;align-items:center}
@@ -385,16 +397,22 @@ details[open].card summary::after{content:"－"}
         <button class="tile recb" id="btnRec"><span class="ic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Ghi âm ngay<small>Ghi trực tiếp trong app</small></button>
         <button class="tile fileb" id="btnPick"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 17v-6M9 14l3-3 3 3"/></svg></span>Chọn file<small>Từ app Ghi âm / Tệp</small></button>
       </div>
-      <div class="hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span>Họp dài 1–2 tiếng: nên ghi bằng app <b>Ghi âm</b> của iPhone, sau đó bấm <b>Chia sẻ → Lưu vào Tệp</b> rồi chọn file ở đây.</span></div>
+      <div class="hint"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span>Họp dài 1–2 tiếng: nên ghi bằng app <b>Ghi âm</b> của iPhone, sau đó bấm <b>Chia sẻ → Lưu vào Tệp</b> rồi chọn file ở đây. Cuộc họp ghi thành nhiều file thì chọn tất cả cùng lúc.</span></div>
     </div>
-    <input type="file" id="fileIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.mp4" hidden>
+    <div class="hint web-only" id="appendInfo" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span></span></div>
+    <input type="file" id="fileIn" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.mp4" multiple hidden>
     <div id="recBox" class="card recview" hidden>
       <div class="pulse"><div class="core"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div></div>
       <div class="timer" id="recTime">00:00:00</div>
       <p class="muted">Đang ghi âm. Giữ màn hình mở, không chuyển app.</p>
       <button class="stopbtn" id="btnStop" aria-label="Dừng ghi"><i></i></button>
     </div>
-    <div id="fileInfo" class="web-only"></div>
+    <div id="fileInfo" class="stack web-only"></div>
+    <div class="hint web-only" id="orderHint" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span></span></div>
+    <div class="addmore web-only" id="addMore" hidden>
+      <button id="btnRecMore"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Ghi âm thêm</button>
+      <button id="btnPickMore"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm file</button>
+    </div>
     <details class="card web-only" id="metaBox" open>
       <summary>Thông tin cuộc họp</summary>
       <label>Chủ đề<input id="mTitle" placeholder="Ví dụ: Họp tiến độ dự án X"></label>
@@ -415,11 +433,12 @@ details[open].card summary::after{content:"－"}
     <div class="card" style="width:100%">
       <ul class="steps" id="steps">
         <li data-s="up"><span class="b">1</span><span id="upLabel">Tải file ghi âm lên</span></li>
-        <li data-s="tr"><span class="b">2</span>Chuyển giọng nói thành chữ, phân biệt người nói</li>
+        <li data-s="tr"><span class="b">2</span><span id="trLabel">Chuyển giọng nói thành chữ, phân biệt người nói</span></li>
         <li data-s="save"><span class="b">3</span>Lưu kết quả trên máy</li>
       </ul>
     </div>
     <p class="err" id="workErr"></p>
+    <button class="primary" id="btnWorkRetry" hidden>Thử lại</button>
     <button id="btnWorkBack" hidden>Quay lại</button>
   </div>
 </section>
@@ -457,14 +476,16 @@ details[open].card summary::after{content:"－"}
     <p class="err" id="minErr"></p>
     <div id="tab_min" class="stack"></div>
     <div id="tab_task" class="stack" hidden></div>
-    <div id="tab_tr" class="stack" hidden><div id="tView" class="stack"></div></div>
+    <div id="tab_tr" class="stack" hidden><div id="partsBox" class="stack"></div><div id="tView" class="stack"></div></div>
     <div id="tab_spk" class="stack" hidden>
       <p class="muted">Máy phân biệt người nói qua đặc điểm giọng và đặt tên tạm A, B, C. Đọc câu nói mẫu rồi gõ tên thật.</p>
+      <div class="hint" id="spkMulti" hidden><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg><span>Cuộc họp này gồm nhiều file ghi âm. Máy tách người nói riêng cho từng file, nên một người có thể mang nhãn khác nhau ở mỗi phần (ví dụ Người A ở phần 1 là Người D ở phần 2). Gõ cùng một tên là app gộp lại thành một người.</span></div>
       <div id="spkBox" class="stack"></div>
       <datalist id="peopleList"></datalist>
       <button class="primary" id="btnSaveNames">Lưu tên người nói</button>
       <p class="muted" id="sttInfo"></p>
     </div>
+    <button class="ghost web-only" id="btnAddAudio"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Thêm file ghi âm vào cuộc họp này</button>
     <button class="ghost web-only" id="btnToClaude"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Sao chép sang Claude</button>
     <textarea id="expText" class="web-only" readonly hidden aria-label="Nội dung cuộc họp để sao chép sang Claude"></textarea>
     <button class="ghost" id="btnCopy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Chỉ sao chép lời thoại</button>
@@ -473,6 +494,9 @@ details[open].card summary::after{content:"－"}
   </div>
 </section>
 </main>
+
+<!-- Chọn lại file còn thiếu của một lượt chuyển chữ bị dừng giữa chừng -->
+<input type="file" id="fileResume" accept="audio/*,video/*,.m4a,.mp3,.wav,.aac,.mp4" multiple hidden>
 
 <!-- Thanh nút dưới cùng (đổi theo từng màn) -->
 <div class="bottombar" id="barHome" hidden><button class="primary fab" id="btnNew"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Cuộc họp mới</button></div>
@@ -486,7 +510,7 @@ details[open].card summary::after{content:"－"}
 
 <script>
 "use strict";
-const APP_VERSION = "2026.11.15.3";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
+const APP_VERSION = "2026.11.18";   // tăng mỗi lần phát hành; hiện ở Cài đặt để biết máy đã nhận bản mới chưa
 const AAI = "https://api.assemblyai.com";
 const LLM = "https://llm-gateway.assemblyai.com/v1/chat/completions";
 const CLAUDE_APP = "https://claude.ai/artifact/MRA8fqXNXRMcV7jKXezEcb";   // bản của app chạy trong Claude (trang riêng tư, chỉ chủ tài khoản mở được)
@@ -510,7 +534,7 @@ const ICON = {
 };
 const screens = ["scrBoot","scrLock","scrSettings","scrHome","scrNew","scrWork","scrMeet"];
 const TITLES = {scrSettings:"Cài đặt", scrNew:"Cuộc họp mới"};
-const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", writer:"claude", audio:null, audioName:"", audioUrl:null,
+const S = { key:null, apiKey:"", model:"claude-sonnet-4-6", writer:"claude", audios:[], appendTo:null,
   cur:null, tab:"min", all:[], loaded:false, job:null, jobRunning:false, busyN:0, busy:false, rec:false,
   genId:null, genText:"", trKey:null, sample:null, opening:false };
 
@@ -519,7 +543,7 @@ function show(id){
   $("topbar").hidden = id === "scrLock" || id === "scrWork" || id === "scrBoot";
   $("btnBack").style.visibility = id === "scrHome" ? "hidden" : "visible";
   $("btnSettings").style.visibility = id === "scrHome" ? "visible" : "hidden";
-  $("topTitle").textContent = TITLES[id] || "";
+  $("topTitle").textContent = id === "scrNew" && S.appendTo ? "Thêm file ghi âm" : TITLES[id] || "";
   $("barHome").hidden = id !== "scrHome"; $("barNew").hidden = id !== "scrNew"; $("barMeet").hidden = id !== "scrMeet";
   window.scrollTo(0,0);
 }
@@ -685,9 +709,19 @@ async function bootClaude(){
 $("btnBootRetry").onclick = bootClaude;
 
 // Việc chuyển thành chữ đang chạy dở được ghi nhớ (đã mã hoá) để nếu app bị đóng giữa chừng thì lấy lại kết quả,
-// không phải tải lên và trả tiền lần nữa. Dạng {id, del:true} = bản trên máy chủ AssemblyAI còn chờ xoá.
-async function setJob(j){ if (j) lsSet("bb_job", JSON.stringify(await enc(j))); else lsDel("bb_job"); }
-async function getJob(){ const raw = lsGet("bb_job"); if (!raw) return null; try{ return await dec(JSON.parse(raw)); }catch(e){ return null; } }
+// không phải tải lên và trả tiền lần nữa. Hai dạng:
+// - đang chạy: {mid, meta, started, files:[{name, size}], parts:[{id, opts} | null], appendTo?}. parts[i] ứng với files[i]; null = file đó chưa gửi được.
+// - chờ xoá trên máy chủ AssemblyAI: {del:true, ids:[...]}.
+// Bản trước 2026.11.18 lưu {id, mid, meta, started, opts} và {id, del:true}: normJob đổi sang dạng mới. Trường bắt đầu bằng "_" (file trong bộ nhớ) không được lưu.
+function normJob(j){
+  if (!j || typeof j !== "object") return null;
+  if (j.del) return {del:true, ids: Array.isArray(j.ids) ? j.ids : j.id ? [j.id] : []};
+  if (Array.isArray(j.files) && Array.isArray(j.parts)) return j;
+  return j.id ? {mid:j.mid, meta:j.meta || {}, started:j.started || Date.now(), files:[{name:"", size:0}], parts:[{id:j.id, opts:j.opts || []}]} : null;
+}
+const jobIds = j => j && !j.del && Array.isArray(j.parts) ? j.parts.filter(Boolean).map(p => p.id) : [];
+async function setJob(j){ if (j) lsSet("bb_job", JSON.stringify(await enc(j, NO_SAVE))); else lsDel("bb_job"); }
+async function getJob(){ const raw = lsGet("bb_job"); if (!raw) return null; try{ return normJob(await dec(JSON.parse(raw))); }catch(e){ return null; } }
 
 /* ---------- Màn nhập mã PIN: mở khoá, tạo mã lần đầu, đổi mã ---------- */
 const hasPin = () => !!lsGet(IN_CLAUDE ? "bb_wrap" : "bb_salt");
@@ -747,7 +781,7 @@ async function afterUnlock(){
   }
   if (cfg){ try{ const c = await dec(JSON.parse(cfg)); S.apiKey = c.apiKey || ""; S.model = c.model || S.model; S.writer = c.writer || "claude"; }catch(e){} }
   const job = await getJob();
-  if (job && job.del){ S.job = null; finishDelete(job.id); } else S.job = job && job.id ? job : null;
+  if (job && job.del){ S.job = null; finishDelete(job.ids); } else S.job = job;
   if (!S.apiKey) openSettings(); else openHome();
 }
 // Đổi mã PIN = mã hoá lại toàn bộ dữ liệu bằng khoá mới. Làm theo thứ tự sao cho app bị đóng ở bất kỳ bước nào cũng không mất dữ liệu.
@@ -808,9 +842,9 @@ $("btnUnlock").onclick = async () => {
 };
 // Khi khoá: xoá mọi nội dung đã giải mã khỏi bộ nhớ và khỏi màn hình (không chỉ ẩn đi)
 function clearSensitive(){
-  Object.assign(S, {key:null, apiKey:"", cur:null, all:[], loaded:false, job:null, trKey:null, genText:"", remote:[]});
+  Object.assign(S, {key:null, apiKey:"", cur:null, all:[], loaded:false, job:null, trKey:null, genText:"", remote:[], appendTo:null, resumeJob:null});
   PIN.buf = PIN.first = PIN.old = ""; dropAudio();
-  ["meetList","vChips","spkBox","peopleList","tView","tab_min","tab_task"].forEach(id => $(id).innerHTML = "");
+  ["meetList","vChips","spkBox","peopleList","tView","partsBox","tab_min","tab_task"].forEach(id => $(id).innerHTML = "");
   ["vTitle","homeSub","minErr","minProgText","workErr","newErr","keyStatus","scanStatus","sttInfo"].forEach(id => $(id).textContent = "");
   ["apiKey","cbText","cbPrompt","q","mTitle","mPeople","mSpeakers","impText","expText"].forEach(id => $(id).value = "");
   $("claudeBox").hidden = true; $("btnPurge").hidden = true;
@@ -826,6 +860,8 @@ document.addEventListener("visibilitychange", () => {
 /* ---------- Điều hướng ---------- */
 $("btnBack").onclick = () => { if (S.rec) return toast("Hãy dừng ghi âm trước");
   if (S.screen === "scrSettings" && !S.apiKey && !IN_CLAUDE) return toast("Cần lưu khoá API trước");
+  const base = S.screen === "scrNew" && S.appendTo && S.all.find(x => x.id === S.appendTo);   // đang thêm file vào một cuộc họp: quay về cuộc họp đó
+  if (base){ S.appendTo = null; return openMeeting(base, "tr"); }
   openHome(); };
 $("btnSettings").onclick = openSettings;
 
@@ -854,7 +890,7 @@ $("btnWipe").onclick = async () => {
     try{ await wipeClaude(); }catch(e){ return toast("Chưa xoá hết được: " + (e.message || e.code || "lỗi kết nối") + ". Hãy bấm lại."); }
     clearSensitive(); toast("Đã xoá toàn bộ dữ liệu"); return initLock();
   }
-  const j = S.job || await getJob(); if (j && j.id) deleteRemote(j.id);   // cố xoá nốt bản còn nằm trên máy chủ AssemblyAI
+  const j = S.job || await getJob(); if (j) for (const id of (j.del ? j.ids : jobIds(j))) deleteRemote(id);   // cố xoá nốt bản còn nằm trên máy chủ AssemblyAI
   // Chỉ xoá dữ liệu của app này: địa chỉ github.io dùng chung kho lưu trữ với mọi trang khác của cùng tài khoản
   ["bb_salt","bb_kdf","bb_check","bb_cfg","bb_job","bb_next"].forEach(lsDel);
   const d = await db(); d.close(); dbp = null; indexedDB.deleteDatabase("bienban");
@@ -866,7 +902,7 @@ async function listRemote(){
   const live = []; let path = "/v2/transcript?limit=200";
   for (let page = 0; path && page < 25; page++){
     const r = await aai(path);
-    for (const t of r.transcripts || []) if (!/deleted_by_user/.test(String(t.audio_url || "")) && !(S.job && S.job.id === t.id)) live.push(t.id);
+    for (const t of r.transcripts || []) if (!/deleted_by_user/.test(String(t.audio_url || "")) && !jobIds(S.job).includes(t.id)) live.push(t.id);
     const older = r.page_details && r.page_details.prev_url;   // danh sách xếp mới trước, "prev" là trang cũ hơn
     path = older ? String(older).replace(/^https?:\/\/[^/]+/, "") : null;
   }
@@ -951,37 +987,100 @@ async function openFromList(m){
   openMeeting(m, "min");
 }
 function jobBanner(job){
-  const c = el("div","card warnc");
-  c.append(el("h2","","Có một cuộc họp đang chuyển thành chữ dở"),
-    el("p","muted", `“${job.meta.title}” chưa lấy xong kết quả (app bị đóng hoặc mất mạng giữa chừng). Lấy lại kết quả không tốn thêm phí.`));
-  const row = el("div","cxbtns"); const go = el("button","primary","Lấy kết quả"); const drop = el("button","","Bỏ");
-  go.onclick = () => runJob(job);
+  const c = el("div","card warnc"), N = job.files.length, sent = jobIds(job).length, title = (job.meta && job.meta.title) || "Cuộc họp";
+  const missing = job.files.map((f, i) => i).filter(i => !job.parts[i]);
+  const inMemory = missing.length && missing.every(i => job._blobs && job._blobs[i]);   // file còn trong bộ nhớ (app chưa bị tải lại)
+  c.append(el("h2","", job.appendTo ? "Có file ghi âm đang thêm dở" : "Có một cuộc họp đang chuyển thành chữ dở"));
+  let txt = `${job.appendTo ? `Phần thêm vào “${title}”` : `“${title}”`} chưa lấy xong kết quả (app bị đóng hoặc mất mạng giữa chừng). Lấy lại kết quả không tốn thêm phí.`;
+  if (missing.length && !inMemory) txt += ` Đã gửi ${sent}/${N} file. Còn thiếu: ${missing.map(i => job.files[i].name || `file ${i + 1}`).join(", ")}.`;
+  c.append(el("p","muted", txt));
+  const row = el("div","cxbtns");
+  if (!missing.length || inMemory){ const go = el("button","primary", missing.length ? "Gửi tiếp" : "Lấy kết quả"); go.onclick = () => runJob(job); row.append(go); }
+  else {
+    const pick = el("button","primary", `Chọn lại ${missing.length} file còn thiếu`); pick.onclick = () => { S.resumeJob = job; $("fileResume").click(); };
+    const part = el("button","", "Lấy kết quả phần đã gửi"); part.onclick = () => runJob(job, {partial:true});
+    row.append(pick, part);
+  }
+  const drop = el("button","","Bỏ");
   drop.onclick = async () => {
     if (!drop._sure){ drop._sure = true; drop.textContent = "Bấm lần nữa để bỏ"; return; }
-    S.job = null; await setJob({id:job.id, del:true}); finishDelete(job.id); renderList(); toast("Đã bỏ kết quả đang chờ");
+    const ids = jobIds(job); S.job = null; await setJob({del:true, ids}); finishDelete(ids); renderList(); toast("Đã bỏ kết quả đang chờ");
   };
-  row.append(go, drop); c.append(row); return c;
+  row.append(drop); c.append(row); return c;
 }
+// Chọn lại file còn thiếu: khớp theo tên trước, file còn lại điền vào chỗ trống theo thứ tự
+$("fileResume").onchange = () => {
+  const job = S.resumeJob, fs = [...$("fileResume").files].sort(byName); $("fileResume").value = ""; if (!job || !fs.length) return;
+  const missing = job.files.map((f, i) => i).filter(i => !job.parts[i]), rest = [];
+  job._blobs = job._blobs || job.files.map(() => null);
+  for (const f of fs){ const i = missing.find(k => !job._blobs[k] && job.files[k].name === f.name); if (i != null) job._blobs[i] = f; else rest.push(f); }
+  for (const f of rest){ const i = missing.find(k => !job._blobs[k]); if (i == null) break; job._blobs[i] = f; }
+  const still = missing.filter(k => !job._blobs[k]).length;
+  if (still){ renderList(); return toast(`Còn thiếu ${still} file. Chọn thêm, hoặc bấm Lấy kết quả phần đã gửi.`); }
+  runJob(job);
+};
 $("q").addEventListener("input", renderList);
 
 /* ---------- Cuộc họp mới: ghi âm / chọn file ---------- */
-function dropAudio(){ S.audio = null; if (S.audioUrl){ URL.revokeObjectURL(S.audioUrl); S.audioUrl = null; } $("fileInfo").innerHTML = ""; }
-$("btnNew").onclick = () => { dropAudio(); $("newErr").textContent = ""; $("impText").value = ""; $("btnImport")._sure = false; $("btnImport").textContent = "Thêm cuộc họp";
-  $("mTitle").value = ""; $("mPeople").value = ""; $("mSpeakers").value = ""; $("mDate").value = new Date().toLocaleDateString("sv");
-  $("btnProcess").disabled = true; $("recBox").hidden = true; $("pickBox").hidden = false; show("scrNew"); };
-$("btnPick").onclick = () => $("fileIn").click();
-$("fileIn").onchange = () => { const f = $("fileIn").files[0]; if (!f) return; setAudio(f, f.name); $("fileIn").value = ""; };
-function setAudio(blob, name){
-  dropAudio(); S.audio = blob; S.audioName = name; const box = $("fileInfo");
-  const chip = el("div","filechip"); const ic = el("div","ic"); ic.innerHTML = ICON.file;
-  const info = el("div"); info.append(el("b","",name), el("span","muted", `${(blob.size/1048576).toFixed(1)} MB · sẵn sàng`));
-  const again = el("button","ghost","Đổi"); again.onclick = () => { dropAudio(); $("pickBox").hidden = false; $("btnProcess").disabled = true; };
-  chip.append(ic, info, again); box.appendChild(chip);
-  $("pickBox").hidden = true; $("btnProcess").disabled = false;
+// Một cuộc họp có thể gồm nhiều file ghi âm (ghi bị ngắt quãng, nhiều người cùng ghi, file gửi sau).
+// S.audios = [{blob, name, rec?, dur?, url?}] theo đúng thứ tự sẽ ghép. S.appendTo = id cuộc họp đang được thêm file (nếu có).
+const MAX_PARTS = 20;
+const byName = (a, b) => a.name.localeCompare(b.name, "vi", {numeric:true, sensitivity:"base"});
+function dropAudio(){ for (const a of S.audios) if (a.url) URL.revokeObjectURL(a.url); S.audios = []; renderAudios(); }
+function addAudios(list){
+  const room = MAX_PARTS - S.audios.length;
+  if (list.length > room) $("newErr").textContent = `Một cuộc họp nhận tối đa ${MAX_PARTS} file ghi âm.`;
+  for (const a of list.slice(0, Math.max(0, room))){ S.audios.push(a); probeDuration(a); }
+  renderAudios();
 }
+function probeDuration(a){   // đọc thời lượng để người dùng dễ kiểm tra thứ tự; không đọc được thì thôi
+  try{ const au = new Audio(), u = URL.createObjectURL(a.blob); au.preload = "metadata";
+    const done = () => { URL.revokeObjectURL(u); au.removeAttribute("src"); };
+    au.onloadedmetadata = () => { if (isFinite(au.duration) && au.duration > 0 && S.audios.includes(a)){ a.dur = au.duration; renderAudios(); } done(); };
+    au.onerror = done; au.src = u; }catch(e){}
+}
+function renderAudios(){
+  const box = $("fileInfo"), n = S.audios.length, multi = n > 1; box.innerHTML = "";
+  S.audios.forEach((a, i) => {
+    const chip = el("div","filechip"), ic = el("div","ic"); if (multi) ic.textContent = i + 1; else ic.innerHTML = ICON.file;
+    const info = el("div"); info.append(el("b","",a.name), el("span","muted", `${(a.blob.size/1048576).toFixed(1)} MB` + (a.dur ? ` · ${hms(a.dur)}` : "") + (multi ? "" : " · sẵn sàng")));
+    if (a.rec){ const sv = document.createElement("a"); a.url = a.url || URL.createObjectURL(a.blob); sv.href = a.url; sv.download = a.name;
+      sv.textContent = "Lưu file ghi âm về máy (dự phòng)"; info.append(document.createElement("br"), sv); }
+    const btns = el("div","ordbtns");
+    if (multi){ const up = el("button","ghost","↑"), dn = el("button","ghost","↓");
+      up.setAttribute("aria-label", `Đưa ${a.name} lên trước`); dn.setAttribute("aria-label", `Đưa ${a.name} xuống sau`); up.disabled = i === 0; dn.disabled = i === n - 1;
+      up.onclick = () => { [S.audios[i - 1], S.audios[i]] = [S.audios[i], S.audios[i - 1]]; renderAudios(); };
+      dn.onclick = () => { [S.audios[i + 1], S.audios[i]] = [S.audios[i], S.audios[i + 1]]; renderAudios(); };
+      btns.append(up, dn); }
+    const rm = el("button","ghost","Bỏ"); rm.setAttribute("aria-label", "Bỏ " + a.name);
+    rm.onclick = () => {   // bản ghi trong app chỉ nằm trong bộ nhớ: bỏ là mất, nên hỏi lại
+      if (a.rec && !rm._sure){ rm._sure = true; rm.textContent = "Bấm lần nữa"; return toast("Bản ghi trong app sẽ mất nếu chưa lưu về máy"); }
+      if (a.url) URL.revokeObjectURL(a.url); S.audios.splice(i, 1); renderAudios(); };
+    btns.append(rm); chip.append(ic, info, btns); box.appendChild(chip);
+  });
+  const total = S.audios.reduce((t, a) => t + (a.dur || 0), 0);
+  $("orderHint").hidden = !multi;
+  $("orderHint").querySelector("span").textContent = multi ? `${n} file sẽ được ghép thành một cuộc họp theo thứ tự từ trên xuống` + (total ? ` (tổng ${shortDur(hms(total))})` : "") + ". Dùng mũi tên để đổi thứ tự." : "";
+  $("pickBox").hidden = n > 0 || S.rec; $("addMore").hidden = !n || S.rec;
+  $("btnProcess").disabled = !n;
+  $("btnProcess").textContent = S.appendTo ? "Chuyển thành chữ và thêm vào cuộc họp" : multi ? `Chuyển ${n} file thành chữ` : "Chuyển thành chữ";
+}
+// appendTo: id cuộc họp cần thêm file; bỏ trống = cuộc họp mới
+function openNew(appendTo){
+  dropAudio(); $("newErr").textContent = ""; $("impText").value = ""; $("btnImport")._sure = false; $("btnImport").textContent = "Thêm cuộc họp";
+  const base = appendTo && S.all.find(x => x.id === appendTo); S.appendTo = base ? base.id : null;
+  $("mTitle").value = ""; $("mPeople").value = ""; $("mSpeakers").value = ""; $("mDate").value = new Date().toLocaleDateString("sv");
+  $("recBox").hidden = true; $("metaBox").hidden = !!base; $("appendInfo").hidden = !base;
+  if (base) $("appendInfo").querySelector("span").textContent = `Các file chọn ở đây được chuyển thành chữ rồi ghép vào sau lời thoại của “${base.title}”.`;
+  show("scrNew"); renderAudios();
+}
+$("btnNew").onclick = () => openNew();
+$("btnPick").onclick = $("btnPickMore").onclick = () => $("fileIn").click();
+$("fileIn").onchange = () => { const fs = [...$("fileIn").files].sort(byName); $("fileIn").value = ""; if (fs.length) addAudios(fs.map(f => ({blob:f, name:f.name}))); };
 let mr, chunks = [], t0, tick;
-$("btnRec").onclick = async () => {
+$("btnRec").onclick = $("btnRecMore").onclick = async () => {
   $("newErr").textContent = "";
+  if (S.audios.length >= MAX_PARTS) return $("newErr").textContent = `Một cuộc họp nhận tối đa ${MAX_PARTS} file ghi âm.`;
   try{
     const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:true}});
     const type = ["audio/mp4","audio/webm;codecs=opus","audio/webm"].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
@@ -991,19 +1090,13 @@ $("btnRec").onclick = async () => {
       const ext = (mr.mimeType || "").includes("mp4") ? "m4a" : "webm";
       const blob = new Blob(chunks, {type: mr.mimeType || "audio/mp4"}); chunks = [];
       $("recBox").hidden = true; $("barNew").hidden = false;
-      setAudio(blob, `ghi-am-${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${ext}`);
-      offerSave(blob); };
-    mr.start(10000); S.rec = true; t0 = Date.now(); $("recBox").hidden = false; $("pickBox").hidden = true; $("barNew").hidden = true;
+      addAudios([{blob, name:`ghi-am-${new Date().toISOString().slice(0,16).replace(/[:T]/g,"-")}.${ext}`, rec:true}]); };
+    mr.start(10000); S.rec = true; t0 = Date.now(); $("recBox").hidden = false; $("pickBox").hidden = true; $("addMore").hidden = true; $("barNew").hidden = true;
     $("recTime").textContent = "00:00:00"; tick = setInterval(() => $("recTime").textContent = hms((Date.now() - t0)/1000), 500);
     keepAwake();
   }catch(e){ $("newErr").textContent = "Không mở được micro. Vào Cài đặt iPhone → Safari → Micro, chọn Cho phép.\n(" + e.message + ")"; }
 };
 $("btnStop").onclick = () => mr && mr.state !== "inactive" && mr.stop();
-function offerSave(blob){ // cho phép lưu file ghi âm về máy để phòng trường hợp xử lý lỗi
-  const a = document.createElement("a"); S.audioUrl = a.href = URL.createObjectURL(blob); a.download = S.audioName;
-  a.textContent = "Lưu file ghi âm về máy (dự phòng)";
-  const info = $("fileInfo").querySelector(".filechip>div"); if (info) info.append(document.createElement("br"), a);
-}
 
 /* ---------- Chuyển giọng nói thành chữ qua AssemblyAI ---------- */
 function step(s, state){ document.querySelectorAll("#steps li").forEach(li => { if (li.dataset.s === s){ li.className = state;
@@ -1031,12 +1124,20 @@ async function deleteRemote(id){
   try{ await aai("/v2/transcript/" + id, {method:"DELETE"}); return true; }
   catch(e){ return !transient(e) && e.status !== 401; }
 }
-function finishDelete(id){ deleteRemote(id).then(async ok => { if (!ok) return; const j = await getJob(); if (j && j.id === id && j.del) lsDel("bb_job"); }); }
-async function createTranscript(audioUrl, meta){
+// Xoá các bản chép lời trên máy chủ; bản nào chưa xoá được thì vẫn nằm trong bb_job để lần mở app sau xoá tiếp
+function finishDelete(ids){
+  ids = [].concat(ids || []).filter(Boolean); if (!ids.length) return Promise.resolve();
+  return Promise.all(ids.map(id => deleteRemote(id).then(ok => ok ? id : null))).then(async gone => {
+    gone = gone.filter(Boolean); const j = await getJob(); if (!j || !j.del) return;
+    const left = j.ids.filter(id => !gone.includes(id));
+    if (left.length) await setJob({del:true, ids:left}); else lsDel("bb_job"); });
+}
+// loose: file này chỉ là một phần của cuộc họp, có thể ít người nói hơn cả cuộc họp
+async function createTranscript(audioUrl, meta, loose){
   const body = { audio_url: audioUrl, speech_models:["universal-3-5-pro","universal-2"], language_code:"vi", speaker_labels:true };
   const extras = {};
   // Số người nói chỉ là ước lượng nên gửi dạng khoảng; AssemblyAI dặn speakers_expected chỉ dùng khi biết chính xác
-  if (meta.speakers) extras.speaker_options = { min_speakers_expected: Math.max(1, meta.speakers - 1), max_speakers_expected: meta.speakers + 2 };
+  if (meta.speakers) extras.speaker_options = { min_speakers_expected: loose ? 1 : Math.max(1, meta.speakers - 1), max_speakers_expected: meta.speakers + 2 };
   if (meta.people) extras.keyterms_prompt = meta.people.split(/[,;]/).map(s => s.trim()).filter(Boolean).slice(0,50);
   // Tuỳ chọn phụ có thể không hợp với mô hình được chọn: nếu bị từ chối thì bỏ dần rồi gửi lại, không để hỏng cả lượt
   const variants = [extras];
@@ -1050,68 +1151,138 @@ async function createTranscript(audioUrl, meta){
   }
   throw last;
 }
-async function pollTranscript(job){
+// Hỏi kết quả mọi file đã gửi, mỗi 5 giây. Trả về mảng ứng với job.files: {res} khi xong, {err} khi file đó hỏng hẳn, null khi file đó chưa được gửi.
+async function pollParts(job){
+  const out = job.files.map((f, i) => job.parts[i] ? undefined : null), sent = out.filter(r => r === undefined).length;
   let fails = 0;
-  while (true){
-    await sleep(5000); let res;
-    try{ res = await aai("/v2/transcript/" + job.id); fails = 0; }
-    catch(e){
-      if (e.status === 404 || e.status === 410){ e.final = true; throw e; }
-      if (!transient(e)) throw e;
-      if (++fails > 60) throw new Error("Mất kết nối quá lâu.");   // iPhone khoá màn hình hoặc mạng chập chờn: cứ thử lại
-      $("workNote").textContent = "Mạng chập chờn, đang thử lại…"; continue;
-    }
-    $("workNote").textContent = `Đã chạy ${hms((Date.now() - job.started)/1000)}. Giữ màn hình mở nhé.`;
-    if (res.status === "completed") return res;
-    if (res.status === "error"){ const err = new Error(res.error || "Dịch vụ báo lỗi khi chuyển giọng nói."); err.final = true; throw err; }
+  while (out.some(r => r === undefined)){
+    await sleep(5000); let flaky = false;
+    for (let i = 0; i < out.length; i++){ if (out[i] !== undefined) continue;
+      try{ const res = await aai("/v2/transcript/" + job.parts[i].id);
+        if (res.status === "completed") out[i] = {res};
+        else if (res.status === "error") out[i] = {err: res.error || "Dịch vụ báo lỗi khi chuyển giọng nói."};
+      }catch(e){
+        if (e.status === 404 || e.status === 410) out[i] = {err: e.message};   // bản trên máy chủ không còn nữa
+        else if (!transient(e)) throw e; else flaky = true;
+      } }
+    if (flaky){ if (++fails > 60) throw new Error("Mất kết nối quá lâu."); $("workNote").textContent = "Mạng chập chờn, đang thử lại…"; continue; }
+    fails = 0; const done = out.filter(r => r).length;
+    $("workNote").textContent = `Đã chạy ${hms((Date.now() - job.started)/1000)}.` + (sent > 1 ? ` Xong ${done}/${sent} file.` : "") + " Giữ màn hình mở nhé.";
+    if (sent > 1) $("trLabel").textContent = `Chuyển giọng nói thành chữ (xong ${done}/${sent} file)`;
   }
+  return out;
 }
-function buildMeeting(job, res){
-  const utts = (res.utterances || []).map(u => ({s:u.speaker, t:u.text, a:u.start, b:u.end}));
-  if (!utts.length && res.text) utts.push({s:"A", t:res.text, a:0, b:(res.audio_duration || 0)*1000});
-  if (!utts.length){ const err = new Error("Không nhận ra lời nói nào trong file ghi âm này."); err.final = true; throw err; }
-  const spk = [...new Set(utts.map(u => u.s))].sort();
-  return { id: job.mid, created: Date.now(), ...job.meta, utts, names: Object.fromEntries(spk.map(s => [s,""])),
-    durationText: res.audio_duration ? hms(res.audio_duration) : "", model: res.speech_model_used || res.speech_model || "", sttOpts: job.opts || [], minutes:null };
+// Nhãn người nói: A..Z, rồi AA, AB...
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const labelAt = n => n < 26 ? LETTERS[n] : LETTERS[Math.floor(n / 26) - 1] + LETTERS[n % 26];
+// Tổng thời lượng (giây) của lời thoại đang có. Cuộc họp cũ không có m.parts thì đọc durationText hoặc mốc cuối của lời thoại.
+function durSec(m){
+  const last = m.utts.length ? m.utts[m.utts.length - 1].b / 1000 : 0;
+  const known = (m.parts || []).length ? m.parts.reduce((t, p) => t + (p.dur || 0), 0)
+    : m.durationText ? m.durationText.split(":").reduce((t, x) => t * 60 + (+x || 0), 0) : 0;
+  return Math.max(known, last);
 }
-// job = {meta} cho lượt mới (tải file lên trước), hoặc {id, mid, meta, started} để lấy tiếp kết quả của lượt đang dở
-async function runJob(job){
+// Ghép kết quả của các file vào cuộc họp m (mới hoặc đang có). Mốc giờ tính liên tục: file sau bắt đầu ở chỗ file trước kết thúc.
+// Máy tách người nói riêng cho từng file, nên chỉ phần có lời đầu tiên của một cuộc họp mới giữ nhãn A, B, C;
+// các phần sau lấy nhãn chưa dùng (D, E...) để không gán nhầm hai người khác nhau vào một nhãn. Người dùng gõ cùng tên thì app gộp lại.
+// Trả về số file có lời nói.
+function mergeParts(m, job, results){
+  const used = new Set(Object.keys(m.names)), fresh = !m.utts.length;
+  let off = fresh ? 0 : durSec(m), ok = 0;
+  if (!m.parts) m.parts = fresh ? [] : [{name:"", dur:off}];   // cuộc họp cũ: lời thoại đang có là phần 1
+  results.forEach((r, i) => {
+    const name = String((job.files[i] || {}).name || ""), pi = m.parts.length;
+    if (!r){ m.parts.push({name, dur:0, err:"Chưa gửi được file này (app bị đóng hoặc mất mạng khi đang gửi)."}); return; }
+    if (r.err){ m.parts.push({name, dur:0, err:String(r.err)}); return; }
+    const res = r.res, utts = (res.utterances || []).map(u => ({s:u.speaker, t:u.text, a:u.start, b:u.end}));
+    if (!utts.length && res.text) utts.push({s:"A", t:res.text, a:0, b:(res.audio_duration || 0)*1000});
+    const dur = res.audio_duration || (utts.length ? utts[utts.length - 1].b / 1000 : 0);
+    if (!utts.length){ m.parts.push({name, dur, err:"Không nhận ra lời nói nào trong file ghi âm này."}); off += dur; return; }
+    const map = {}; let n = 0;
+    for (const sp of [...new Set(utts.map(u => u.s))].sort()){
+      if (fresh && !ok) map[sp] = sp; else { while (used.has(labelAt(n))) n++; map[sp] = labelAt(n); }
+      used.add(map[sp]); if (!(map[sp] in m.names)) m.names[map[sp]] = "";
+    }
+    for (const u of utts){ const v = {s:map[u.s], t:u.t, a:Math.round(u.a + off * 1000), b:Math.round(u.b + off * 1000)}; if (pi) v.p = pi; m.utts.push(v); }
+    m.parts.push({name, dur}); off += dur; ok++;
+    if (!m.model) m.model = res.speech_model_used || res.speech_model || "";
+    m.sttOpts = [...new Set([...(m.sttOpts || []), ...(((job.parts[i] || {}).opts) || [])])];
+  });
+  if (off) m.durationText = hms(off);
+  return ok;
+}
+// job: lượt mới {meta, files, parts, _blobs, appendTo?}, hoặc lượt đã lưu (lấy tiếp kết quả, gửi tiếp file còn thiếu).
+// opts.partial: lấy kết quả các file đã gửi và bỏ qua file chưa gửi được (khi không còn file đó trên máy).
+async function runJob(job, opts = {}){
   if (S.jobRunning) return; S.jobRunning = true; busy(+1);
-  show("scrWork"); $("workErr").textContent = ""; $("btnWorkBack").hidden = true; $("workSpin").hidden = false;
-  $("workTitle").textContent = job.id ? "Đang lấy lại kết quả" : "Đang chuyển thành chữ";
+  const N = job.files.length, multi = N > 1, resumed = jobIds(job).length > 0;
+  show("scrWork"); $("workErr").textContent = ""; $("btnWorkBack").hidden = true; $("btnWorkRetry").hidden = true; $("workSpin").hidden = false;
+  $("workTitle").textContent = job.appendTo ? "Đang thêm file ghi âm" : resumed ? "Đang lấy lại kết quả" : "Đang chuyển thành chữ";
   $("workNote").textContent = "Họp 1–2 tiếng thường mất 2–6 phút. Giữ màn hình mở.";
   document.querySelectorAll("#steps li").forEach((li,i) => { li.className = ""; li.querySelector(".b").textContent = i + 1; });
-  $("upLabel").textContent = "Tải file ghi âm lên";
+  const upText = multi ? `Tải ${N} file ghi âm lên` : "Tải file ghi âm lên";
+  $("upLabel").textContent = upText; $("trLabel").textContent = "Chuyển giọng nói thành chữ, phân biệt người nói";
   try{
-    if (!job.id){
+    const blobOf = i => job._blobs && job._blobs[i];
+    const todo = job.files.map((f, i) => i).filter(i => !job.parts[i] && blobOf(i));
+    const lost = job.files.map((f, i) => i).filter(i => !job.parts[i] && !blobOf(i));
+    if (lost.length && !opts.partial) throw new Error(`còn ${lost.length} file chưa gửi được và không còn trong app. Về danh sách để chọn lại file đó`);
+    if (todo.length){
       step("up","on");
-      const up = await uploadAudio(S.audio, f => $("upLabel").textContent = `Đang tải file ghi âm lên: ${Math.round(f * 100)}%`);
-      $("upLabel").textContent = "Tải file ghi âm lên"; step("up","done"); step("tr","on");
-      const created = await createTranscript(up.upload_url, job.meta);
-      job = {...job, id: created.id, opts: created.opts, mid: crypto.randomUUID(), started: Date.now()}; S.job = job; await setJob(job);
-    } else { step("up","done"); step("tr","on"); }
-    const res = await pollTranscript(job);
+      for (const i of todo){
+        const tag = multi ? `file ${i + 1}/${N}` : "file ghi âm";
+        $("upLabel").textContent = `Đang tải ${tag} lên…`;
+        const up = await uploadAudio(blobOf(i), f => $("upLabel").textContent = `Đang tải ${tag} lên: ${Math.round(f * 100)}%`);
+        const created = await createTranscript(up.upload_url, job.meta, multi || !!job.appendTo);
+        job.parts[i] = {id: created.id, opts: created.opts};
+        job.mid = job.mid || job.appendTo || crypto.randomUUID(); job.started = job.started || Date.now();
+        S.job = job; await setJob(job);   // ghi lại sau mỗi file: app bị đóng giữa chừng thì không phải gửi lại file đã gửi
+      }
+    }
+    $("upLabel").textContent = upText; step("up","done"); step("tr","on");
+    const results = await pollParts(job);
     step("tr","done"); step("save","on");
-    const m = buildMeeting(job, res);
+    const base = job.appendTo && S.all.find(x => x.id === job.appendTo);
+    // Thêm vào cuộc họp đang có: làm trên bản sao, chỉ thay khi có kết quả dùng được
+    const m = base ? JSON.parse(JSON.stringify(base))
+      : { id: job.mid, created: Date.now(), ...job.meta, utts: [], names: {}, durationText: "", model: "", sttOpts: [], minutes: null };
+    const before = (m.parts || []).length || (base ? 1 : 0), ok = mergeParts(m, job, results), added = m.parts.slice(before);
+    if (!ok){ const errs = added.map(p => p.err).filter(Boolean);
+      const e = new Error(errs.length === 1 ? errs[0] : "Không chuyển được file nào thành chữ. " + errs.map((x, k) => `File ${k + 1}: ${x}`).join(" ")); e.final = true; throw e; }
+    if (base){ if (base.minutes) m.loiThoaiMoi = true; delete m.cho; delete m.truoc; }   // yêu cầu đang chờ Claude được làm từ lời thoại cũ
     await saveMeeting(m); step("save","done");
-    S.job = null; await setJob({id:job.id, del:true}); finishDelete(job.id);
-    dropAudio(); openMeeting(m, "spk"); toast("Xong! Hãy đặt tên người nói");
+    const ids = jobIds(job); S.job = null; await setJob({del:true, ids}); finishDelete(ids);
+    if (job._fromNew) dropAudio(); S.appendTo = null; S.trKey = null;
+    const bad = added.filter(p => p.err).length;
+    openMeeting(m, "spk");
+    toast(bad ? `Xong, nhưng ${bad} file chưa chuyển được. Xem tab Lời thoại.` : base ? "Đã thêm vào cuộc họp. Hãy đặt tên người nói cho phần mới" : "Xong! Hãy đặt tên người nói");
   }catch(e){
     $("workSpin").hidden = true;
-    if (e.final && job.id){ S.job = null; await setJob({id:job.id, del:true}); finishDelete(job.id); }
-    const pending = !!S.job;
-    $("workErr").textContent = "Có lỗi: " + e.message + (pending
-      ? "\nPhần chuyển thành chữ vẫn đang chạy trên máy chủ. Về danh sách rồi bấm “Lấy kết quả” để lấy lại, không tốn thêm phí."
-      : (S.audio ? "\nFile ghi âm vẫn còn trên máy, bạn có thể thử lại." : ""));
-    $("btnWorkBack").textContent = pending || !S.audio ? "Về danh sách" : "Quay lại"; $("btnWorkBack").hidden = false;
+    if (e.final && jobIds(job).length){ const ids = jobIds(job); S.job = null; await setJob({del:true, ids}); finishDelete(ids); }
+    const pending = !!S.job && S.job === job, sent = jobIds(job).length;
+    let msg = "Có lỗi: " + e.message;
+    if (pending && sent < N) msg += `\nĐã gửi ${sent}/${N} file. Bấm “Thử lại” để gửi tiếp, file đã gửi không phải gửi lại.`;
+    else if (pending) msg += "\nPhần chuyển thành chữ vẫn đang chạy trên máy chủ. Bấm “Thử lại”, hoặc về danh sách rồi bấm “Lấy kết quả”. Không tốn thêm phí.";
+    else if (S.audios.length) msg += "\nFile ghi âm vẫn còn trên máy, bạn có thể thử lại.";
+    $("workErr").textContent = msg;
+    $("btnWorkRetry").hidden = !pending;
+    $("btnWorkBack").textContent = pending || !S.audios.length ? "Về danh sách" : "Quay lại"; $("btnWorkBack").hidden = false;
   }finally{ S.jobRunning = false; busy(-1); }
 }
 $("btnProcess").onclick = () => {
-  if (!S.audio || S.jobRunning) return;
-  runJob({meta:{ title:$("mTitle").value.trim() || "Cuộc họp " + fmtDate($("mDate").value), date:$("mDate").value,
-    people:$("mPeople").value.trim(), speakers: parseInt($("mSpeakers").value) || null }});
+  if (!S.audios.length || S.jobRunning) return; $("newErr").textContent = "";
+  if (S.job) return $("newErr").textContent = "Còn một cuộc họp đang chuyển thành chữ dở. Về danh sách, bấm Lấy kết quả hoặc Bỏ trước đã.";
+  const base = S.appendTo && S.all.find(x => x.id === S.appendTo);
+  if (S.appendTo && !base) return $("newErr").textContent = "Không còn thấy cuộc họp cần thêm file. Hãy quay lại danh sách.";
+  if (base && S.genId === base.id) return $("newErr").textContent = "Đang tạo biên bản cho cuộc họp này. Hãy thêm file sau khi xong.";
+  const meta = base ? {title: base.title, date: base.date || "", people: base.people || "", speakers: base.speakers || null}
+    : { title:$("mTitle").value.trim() || "Cuộc họp " + fmtDate($("mDate").value), date:$("mDate").value, people:$("mPeople").value.trim(), speakers: parseInt($("mSpeakers").value) || null };
+  const job = {meta, files: S.audios.map(a => ({name:a.name, size:a.blob.size})), parts: S.audios.map(() => null), _blobs: S.audios.map(a => a.blob), _fromNew: true};
+  if (base) job.appendTo = base.id;
+  runJob(job);
 };
-$("btnWorkBack").onclick = () => (S.job || !S.audio) ? openHome() : show("scrNew");
+$("btnWorkBack").onclick = () => (S.job || !S.audios.length) ? openHome() : show("scrNew");
+$("btnWorkRetry").onclick = () => { if (S.job) runJob(S.job); };
 
 /* ---------- Chi tiết cuộc họp ---------- */
 const who = (m, s) => m.names[s] || ("Người " + s);
@@ -1138,6 +1309,7 @@ function openMeeting(m, tab, keepScroll){
   renderHead(m);
   const trKey = m.id + "|" + JSON.stringify(m.names) + "|" + m.utts.length;
   if (S.trKey !== trKey){ S.trKey = trKey; renderSpeakers(m); renderTranscript(m); }   // lời thoại dài: chỉ vẽ lại khi thực sự đổi
+  renderParts(m);
   renderMinutes(m); renderTasks(m); renderBar(m); renderClaudeBox(m); minStatus(S.genText);
   setTab(S.tab || "min"); show("scrMeet"); S.tab = "min"; if (keepScroll) window.scrollTo(0, y);
   loadExcel().catch(() => {});   // tải sẵn thư viện Excel trong lúc người dùng đọc biên bản
@@ -1148,6 +1320,9 @@ function renderHead(m){
   if (m.date) ch.append(withIcon("span","chip","cal", fmtDate(m.date)));
   if (m.durationText) ch.append(withIcon("span","chip","clock", shortDur(m.durationText)));
   ch.append(withIcon("span","chip","people", speakerColors(m).count + " người nói"));
+  const ps = m.parts || [], bad = ps.filter(p => p.err).length;
+  if (ps.length > 1){ const c = el("button", "chip" + (bad ? " warn" : ""), bad ? `${bad}/${ps.length} file chưa chuyển được` : `${ps.length} file ghi âm`);
+    c.onclick = () => setTab("tr"); ch.append(c); }
   ch.append(m.minutes ? withIcon("span","chip ok","check","Đã có biên bản") : el("span","chip warn","Chưa có biên bản"));
   const pend = m.minutes ? confirmItems(m).filter(q => !q.ok).length : 0;
   if (pend){ const c = el("button","chip warn", pend + " điểm cần xác nhận");
@@ -1172,17 +1347,37 @@ function renderSpeakers(m){
   const OPT = {speaker_options:"khoảng số người nói", keyterms_prompt:"tên riêng cần nghe đúng"};
   $("sttInfo").textContent = [m.model ? `Mô hình chuyển giọng nói: ${m.model}.` : "",
     (m.sttOpts || []).length ? `Gợi ý đã gửi kèm: ${m.sttOpts.map(o => OPT[o] || o).join(", ")}.` : ""].filter(Boolean).join(" ");
-  const dl = $("peopleList"); dl.innerHTML = "";
-  (m.people || "").split(/[,;]/).map(s => s.trim()).filter(Boolean).forEach(n => { const o = el("option"); o.value = n; dl.appendChild(o); });
+  const dl = $("peopleList"), multi = (m.parts || []).length > 1; dl.innerHTML = ""; $("spkMulti").hidden = !multi;
+  new Set([...(m.people || "").split(/[,;]/).map(s => s.trim()), ...Object.values(m.names).map(s => (s || "").trim())].filter(Boolean))
+    .forEach(n => { const o = el("option"); o.value = n; dl.appendChild(o); });
   for (const s of Object.keys(m.names)){ const said = m.utts.filter(u => u.s === s); const first = said.find(u => u.t.length > 25) || said[0];
     const c = el("div","spkcard"); const right = el("div");
     const inp = el("input"); inp.id = "name_" + s; inp.value = m.names[s]; inp.placeholder = `Tên thật của Người ${s}`; inp.setAttribute("list","peopleList");
-    right.append(el("span","n", `Người ${s} · nói ${said.length} lần` + (colors.same[s] ? ` · đã gộp với Người ${colors.same[s]} (cùng tên)` : "")),
+    const inParts = multi ? ` · phần ${[...new Set(said.map(u => (u.p || 0) + 1))].join(", ")}` : "";
+    right.append(el("span","n", `Người ${s}${inParts} · nói ${said.length} lần` + (colors.same[s] ? ` · đã gộp với Người ${colors.same[s]} (cùng tên)` : "")),
       first ? el("span","q", "“" + first.t.slice(0,110) + (first.t.length > 110 ? "…" : "") + "”") : el("span"), inp);
     c.append(avatar(m, s, colors), right); box.appendChild(c); }
 }
+// Danh sách file ghi âm của cuộc họp (khi có nhiều file hoặc có file lỗi), ở đầu tab Lời thoại
+function renderParts(m){
+  const box = $("partsBox"), ps = m.parts || []; box.innerHTML = "";
+  if (ps.length < 2 && !ps.some(p => p.err)) return;
+  const bad = ps.some(p => p.err), c = el("div","card" + (bad ? " warnc" : "")), ul = el("ul","partlist"); let at = 0;
+  c.append(el("h2","", `${ps.length} file ghi âm`));
+  ps.forEach((p, i) => { const li = el("li");
+    li.append(el("b","", `Phần ${i + 1}` + (p.name ? `: ${p.name}` : "")),
+      el("span","muted", p.err ? "Chưa có trong lời thoại" : `${shortDur(hms(p.dur || 0))} · bắt đầu ở ${hms(at)}`));
+    if (p.err) li.append(el("p","err", p.err));
+    at += p.dur || 0; ul.append(li); });
+  c.append(ul);
+  if (bad) c.append(el("p","muted web-only","Phần chưa chuyển được không có trong lời thoại và biên bản. Có thể thêm lại file đó bằng nút “Thêm file ghi âm vào cuộc họp này” ở cuối trang; phần thêm sẽ nằm sau cùng."));
+  box.append(c);
+}
 function renderTranscript(m){ const v = $("tView"); v.innerHTML = ""; const colors = speakerColors(m);
-  for (const u of m.utts){ const d = el("div","utt"); d.dataset.ms = u.a; const bub = el("div","bubble");
+  const multi = (m.parts || []).length > 1; let prev = -1;
+  for (const u of m.utts){ const p = u.p || 0;
+    if (multi && p !== prev){ prev = p; const nm = (m.parts[p] || {}).name; v.appendChild(el("div","partsep", `Phần ${p + 1}` + (nm ? ` · ${nm}` : ""))); }
+    const d = el("div","utt"); d.dataset.ms = u.a; const bub = el("div","bubble");
     const h = el("div","h", who(m,u.s)); h.style.color = `var(--s${colors[u.s] || 1}t)`; h.append(el("span","", hms(u.a/1000)));
     bub.append(h, el("p","", u.t)); d.append(avatar(m, u.s, colors), bub); v.appendChild(d); } }
 $("btnSaveNames").onclick = async () => { const m = S.cur;
@@ -1192,10 +1387,23 @@ $("btnDel").onclick = async () => { if ($("delConfirm").hidden){ $("delConfirm")
   await delMeeting(S.cur.id); S.cur = null; S.trKey = null; toast("Đã xoá cuộc họp"); openHome(); };
 
 /* ---------- Nội dung yêu cầu gửi cho AI ---------- */
-function transcriptText(m){ return m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`).join("\n"); }
+// Lời thoại gửi cho AI. Cuộc họp nhiều file thì có dòng đánh dấu đầu mỗi phần.
+function transcriptLines(m){
+  const ps = m.parts || [], multi = ps.length > 1, out = []; let prev = -1;
+  for (const u of m.utts){ const p = u.p || 0;
+    if (multi && p !== prev){ prev = p; out.push(`--- Phần ${p + 1}/${ps.length} ---`); }
+    out.push(`[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`); }
+  return out;
+}
+function transcriptText(m){ return transcriptLines(m).join("\n"); }
 const THU = ["Chủ nhật","thứ Hai","thứ Ba","thứ Tư","thứ Năm","thứ Sáu","thứ Bảy"];
 const dateWithDay = d => d ? `${fmtDate(d)} (${THU[new Date(d + "T00:00").getDay()]})` : "(không rõ)";
-const meetingInfo = m => `Thông tin: Chủ đề: ${m.title}. Ngày họp: ${dateWithDay(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`;
+function meetingInfo(m){
+  const ps = m.parts || [], good = ps.filter(p => !p.err).length, bad = ps.length - good;
+  return `Thông tin: Chủ đề: ${m.title}. Ngày họp: ${dateWithDay(m.date)}. Người tham dự: ${m.people || "(không rõ)"}.`
+    + (good > 1 ? ` Cuộc họp được ghi thành ${ps.length} file; lời thoại đã ghép theo thứ tự, mốc giờ tính liên tục từ đầu file thứ nhất. Máy tách người nói riêng cho từng file, nên các nhãn "Người X" chưa có tên ở các phần khác nhau có thể là cùng một người: hãy suy luận theo ngữ cảnh.` : "")
+    + (bad ? ` Lưu ý: ${bad} file ghi âm không chuyển được thành chữ, nên lời thoại có thể thiếu một đoạn.` : "");
+}
 // Biên bản phải thống nhất một ngôn ngữ: tiếng Việt, văn phong công sở. Dùng chung cho mọi yêu cầu gửi AI.
 const LANG_RULES = `NGÔN NGỮ CỦA BIÊN BẢN: viết toàn bộ bằng tiếng Việt có dấu, văn phong công sở chuyên nghiệp, thống nhất từ đầu đến cuối.
 - Từ, cụm từ, câu tiếng Anh: dịch sang từ tiếng Việt tương ứng thường dùng trong văn bản công sở và giữ đúng nghĩa, ví dụ deadline → hạn chót, report → báo cáo, draft → bản nháp, launch → ra mắt, feedback → phản hồi, update → cập nhật. Mỗi khái niệm chỉ dùng một cách gọi trong cả biên bản.
@@ -1283,7 +1491,7 @@ function finishGen(m, obj){
   if (obj && typeof obj.bien_ban === "object" && obj.bien_ban && !obj.tom_tat) obj = obj.bien_ban;
   if (!obj || typeof obj !== "object" || !(obj.tom_tat || (obj.diem_chinh || []).length)) throw new Error("không thấy nội dung biên bản trong phần đã dán");
   if (obj.tom_tat === "3-5 câu") throw new Error("đây là mẫu trống trong yêu cầu, chưa phải câu trả lời của Claude");
-  keepUndo(m); m.minutes = obj; m.lich_su = [];
+  keepUndo(m); m.minutes = obj; m.lich_su = []; delete m.loiThoaiMoi;   // biên bản mới đã có cả phần lời thoại vừa thêm
   if (m.truoc) m.lastChanges = {luc: stamp(), thay_doi:["Đã thay toàn bộ bằng biên bản mới do AI viết lại."]}; else delete m.lastChanges;
 }
 // Nhận biên bản do AI sửa lại: theo các xác nhận (idx), hoặc thống nhất ngôn ngữ (langNote).
@@ -1344,7 +1552,7 @@ $("cbImport").onclick = () => importClaude($("cbText").value);
 async function importClaude(t){
   const m = S.cur, c = m && m.cho; if (!c) return;
   try{
-    if (t.includes(PROMPT_MARK) || t.includes("LỜI THOẠI:\n["))
+    if (t.includes(PROMPT_MARK) || /LỜI THOẠI:\n(\[|--- Phần)/.test(t))
       throw new Error("phần vừa dán vẫn là yêu cầu gửi cho Claude, chưa phải câu trả lời. Hãy sang Claude, bấm Sao chép ở câu trả lời rồi quay lại bấm Dán kết quả");
     const obj = parseReply(t); if (!obj) throw new Error("không đọc được kết quả. Hãy sao chép đúng khối mã trong câu trả lời của Claude");
     if (c.kind === "gen") finishGen(m, obj); else finishApply(m, obj, c.idx || [], c.kind === "lang" ? LANG_DONE : "");
@@ -1429,7 +1637,7 @@ async function autoRun(m, work, okMsg, failPrefix){
 }
 function generateAuto(m){
   return autoRun(m, async () => {
-    const lines = m.utts.map(u => `[${hms(u.a/1000)}] ${who(m,u.s)}: ${u.t}`);
+    const lines = transcriptLines(m);
     const parts = splitLines(lines, S.writer === "direct" ? directChunkChars(lines) : CHUNK_CHARS); let obj;
     if (parts.length === 1){
       obj = await callJSON(`${INSTR}\n\n${meetingInfo(m)}\n\n${SCHEMA}${JSON_ONLY}\n\nLỜI THOẠI:\n${parts[0]}`, 5000, "Đang viết biên bản…");
@@ -1500,6 +1708,9 @@ function renderMinutes(m){
       e.append(b, el("p","muted","Dùng khi bạn làm biên bản trong app Claude: bấm nút trên, mở trang dưới đây, chọn Cuộc họp mới rồi dán."), a); }
     v.appendChild(e); return; }
   const x = m.minutes;
+  if (m.loiThoaiMoi){ const c = el("div","card warnc"), keep = el("button","ghost","Giữ biên bản hiện tại");
+    c.append(el("h2","","Lời thoại vừa có thêm phần mới"), el("p","muted","Biên bản hiện tại chưa có nội dung của file vừa thêm. Đặt tên người nói cho phần mới (tab Người nói), rồi bấm “Tạo lại biên bản” ở dưới."));
+    keep.onclick = async () => { delete m.loiThoaiMoi; await saveMeeting(m); renderMinutes(m); }; c.append(keep); v.appendChild(c); }
   const card = (title, ...nodes) => { const c = el("div","card"); c.append(el("h2","",title), ...nodes); v.appendChild(c); return c; };
   const iconList = (icon, arr) => { const ul = el("ul","list-ic"); arr.forEach(t => { const li = el("li"); li.innerHTML = ICON[icon]; li.append(el("span","",t)); ul.append(li); }); return ul; };
   if (m.lastChanges){ const c = el("div","card okc"); const top = el("div","cxbtns"); top.style.cssText = "justify-content:space-between;flex-wrap:nowrap";
@@ -1627,14 +1838,16 @@ async function unpackMeeting(text){
   if (!m || !Array.isArray(m.utts)) throw new Error("gói không có lời thoại");
   // Chỉ nhận các trường đã biết và ép kiểu từng trường: đây là dữ liệu đi từ ngoài vào
   const str = (v, n) => typeof v === "string" ? v.slice(0, n) : "";
-  const utts = m.utts.slice(0, 30000).map(u => ({s: str(u && u.s, 8) || "A", t: str(u && u.t, 20000), a: +(u && u.a) || 0, b: +(u && u.b) || 0})).filter(u => u.t);
+  const part = u => { const p = Math.floor(+(u && u.p)); return p > 0 && p < 50 ? {p} : {}; };
+  const utts = m.utts.slice(0, 30000).map(u => ({s: str(u && u.s, 8) || "A", t: str(u && u.t, 20000), a: +(u && u.a) || 0, b: +(u && u.b) || 0, ...part(u)})).filter(u => u.t);
+  const parts = Array.isArray(m.parts) ? m.parts.slice(0, 50).map(p => ({name: str(p && p.name, 200), dur: Math.max(0, +(p && p.dur) || 0), ...(p && p.err ? {err: str(p.err, 300)} : {})})) : null;
   if (!utts.length) throw new Error("gói không có lời thoại");
   const names = {}; for (const s of [...new Set(utts.map(u => u.s))].sort()) names[s] = str(m.names && m.names[s], 80);
   const x = m.minutes, hasMin = x && typeof x === "object" && !Array.isArray(x) && (x.tom_tat || (x.diem_chinh || []).length);
   return { id: /^[\w-]{8,64}$/.test(m.id) ? m.id : crypto.randomUUID(), created: +m.created || Date.now(), title: str(m.title, 200) || "Cuộc họp",
     date: /^\d{4}-\d\d-\d\d$/.test(m.date) ? m.date : "", people: str(m.people, 500), speakers: +m.speakers || null, utts, names,
     durationText: str(m.durationText, 12), model: str(m.model, 60), sttOpts: Array.isArray(m.sttOpts) ? m.sttOpts.map(o => str(o, 40)).filter(Boolean).slice(0, 5) : [],
-    minutes: hasMin ? x : null, lich_su: hasMin && Array.isArray(m.lich_su) ? m.lich_su : [] };
+    minutes: hasMin ? x : null, lich_su: hasMin && Array.isArray(m.lich_su) ? m.lich_su : [], ...(parts ? {parts} : {}), ...(hasMin && m.loiThoaiMoi ? {loiThoaiMoi: true} : {}) };
 }
 // Trang web: sao chép gói vào bộ nhớ tạm. iPhone chỉ cho sao chép ngay trong thao tác bấm, nên việc nén được đưa vào dưới dạng lời hứa.
 async function toClaude(m){
@@ -1647,6 +1860,10 @@ async function toClaude(m){
   catch(e){ box.value = text; box.hidden = false; box.focus(); box.select(); toast("Chưa tự sao chép được: giữ tay lên ô chữ → Chọn tất cả → Sao chép"); }
 }
 $("btnToClaude").onclick = () => toClaude(S.cur);
+$("btnAddAudio").onclick = () => { const m = S.cur; if (!m) return;
+  if (S.genId === m.id) return toast("Đang tạo biên bản cho cuộc họp này, hãy thêm file sau khi xong");
+  if (S.job) return toast("Còn một cuộc họp đang chuyển thành chữ dở. Hãy lấy kết quả hoặc bỏ nó trước");
+  openNew(m.id); };
 // Trong Claude: nhận gói vừa dán
 $("btnImport").onclick = async () => { const b = $("btnImport"); $("newErr").textContent = ""; if (b.disabled) return;
   if (!$("impText").value.trim()) return $("newErr").textContent = "Chưa dán gì vào ô. Chạm giữ vào ô, chọn Dán.";
@@ -1699,6 +1916,7 @@ function excelMinutesSheet(wb, m){
   const title = ws.addRow(["BIÊN BẢN CUỘC HỌP"]); title.font = xlBold(14); span(title, 1, ""); title.height = 24;
   const info = (label, value) => { const r = ws.addRow([label, value || ""]); r.getCell(1).font = xlBold(); r.getCell(1).alignment = XL_WRAP; span(r, 2, value); };
   ws.addRow([]); info("Chủ đề", m.title); info("Ngày họp", fmtDate(m.date)); info("Thời lượng", m.durationText);
+  if ((m.parts || []).length > 1) info("File ghi âm", m.parts.map((p, i) => `${i + 1}. ${p.name || "Phần " + (i + 1)}` + (p.err ? " (chưa chuyển được)" : ` (${hms(p.dur || 0)})`)).join("; "));
   info("Thành phần", (x.thanh_phan || []).join(", ") || m.people || Object.keys(m.names).map(s => who(m,s)).join(", ")); info("Mục đích", x.muc_dich);
   const section = t => { ws.addRow([]); const r = ws.addRow([t]); r.font = xlBold(12); span(r, 1, ""); r.height = 20; };
   // wide: bảng chỉ có 2 cột thì cột thứ hai được gộp cho rộng hết trang
@@ -1726,7 +1944,8 @@ async function exportExcel(m){
     (x.viec_theo_doi || []).map((d,i) => [i+1, d.cong_viec, d.nguoi_phu_trach, d.han, d.uu_tien, d.xong ? "Đã xong" : "Chưa làm", d.ghi_chu]));
   excelTableSheet(wb, "Kế hoạch tiếp theo", [5,50,20,30], ["STT","Nội dung kế hoạch","Thời gian dự kiến","Ghi chú"],
     (x.ke_hoach || []).map((d,i) => [i+1, d.noi_dung, d.thoi_gian, d.ghi_chu]));
-  excelTableSheet(wb, "Lời thoại", [10,18,90], ["Thời điểm","Người nói","Nội dung"], m.utts.map(u => [hms(u.a/1000), who(m,u.s), u.t]));
+  if ((m.parts || []).length > 1) excelTableSheet(wb, "Lời thoại", [7,10,18,90], ["Phần","Thời điểm","Người nói","Nội dung"], m.utts.map(u => [(u.p || 0) + 1, hms(u.a/1000), who(m,u.s), u.t]));
+  else excelTableSheet(wb, "Lời thoại", [10,18,90], ["Thời điểm","Người nói","Nội dung"], m.utts.map(u => [hms(u.a/1000), who(m,u.s), u.t]));
   const blob = new Blob([await wb.xlsx.writeBuffer()], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   const slug = (m.title || "cuoc-hop").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d").replace(/Đ/g,"D").replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40);
   return saveFile(blob, `BienBan_${m.date || "ngay"}_${slug}.xlsx`);

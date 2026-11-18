@@ -62,12 +62,18 @@
 ## Dữ liệu trên máy người dùng
 - IndexedDB `bienban`, kho `meetings`: mỗi cuộc họp một bản ghi `{id, iv, ct}` mã hoá AES-GCM; khoá suy ra từ mã PIN bằng PBKDF2-SHA256.
   Số vòng nằm ở `bb_kdf`: 600.000 cho mã PIN tạo hoặc đổi từ bản 2026.11.14.2; không có `bb_kdf` nghĩa là dữ liệu cũ, 250.000 vòng (vẫn phải mở được).
-- Cuộc họp `m`: `id, created, title, date, people, speakers, utts[{s,t,a,b}], names{A:"tên"}, durationText, model, sttOpts[], minutes, lich_su[], lastChanges, truoc, cho`.
+- Cuộc họp `m`: `id, created, title, date, people, speakers, utts[{s,t,a,b,p?}], names{A:"tên"}, durationText, model, sttOpts[], parts[{name,dur,err?}], minutes, lich_su[], lastChanges, truoc, cho, loiThoaiMoi?`.
+  - Một cuộc họp có thể gồm nhiều file ghi âm. `parts` = các file theo thứ tự ghép (`dur` giây, `err` = lý do file đó không có trong lời thoại); `u.p` = số thứ tự phần (bỏ trống = phần đầu).
+    Mốc giờ `a`, `b` tính liên tục qua các phần. Cuộc họp lưu trước bản 2026.11.18 không có `parts`: coi như một phần (`durSec` đọc `durationText` hoặc mốc cuối).
+  - Máy tách người nói riêng cho từng file: phần có lời đầu tiên giữ nhãn A, B, C; phần sau lấy nhãn chưa dùng (`mergeParts`). Gõ cùng tên thì `speakerColors` gộp thành một người.
+  - `loiThoaiMoi`: đã thêm file vào cuộc họp có biên bản, biên bản chưa có phần mới; xoá khi tạo lại biên bản.
   - `minutes`: `chu_de, muc_dich, thanh_phan[], tom_tat, diem_chinh[], quyet_dinh[], viec_theo_doi[{..., xong}], ke_hoach[], can_xac_nhan[{noi_dung, thoi_diem, ok, sua, applied, nhap}]`.
   - `cho = {kind: "gen" | "apply" | "lang", idx[]}`: đang chờ người dùng dán kết quả từ Claude (viết mới, cập nhật theo xác nhận, thống nhất ngôn ngữ). `truoc`: bản trước đó, để Hoàn tác.
   - `sttOpts`: tuỳ chọn phụ mà AssemblyAI đã nhận (`speaker_options`, `keyterms_prompt`), hiện ở tab Người nói. Hai nhãn người nói được gõ cùng tên được coi là một người (`speakerColors`).
 - localStorage: `bb_salt`, `bb_kdf`, `bb_check`, `bb_cfg` (mã hoá: khoá API, cách viết), `bb_theme`,
-  `bb_job` (mã hoá: việc chuyển chữ đang dở, hoặc `{id, del:true}` là bản trên máy chủ còn chờ xoá),
+  `bb_job` (mã hoá): việc chuyển chữ đang dở `{mid, meta, started, files[{name,size}], parts[{id,opts}|null], appendTo?}` (`parts[i]` null = file i chưa gửi được),
+  hoặc `{del:true, ids[]}` là các bản trên máy chủ còn chờ xoá. Dạng cũ `{id,...}` / `{id, del:true}` vẫn đọc được qua `normJob`. Mỗi file được ghi vào `bb_job` ngay sau khi gửi,
+  nên app bị đóng giữa chừng thì không gửi lại file đã gửi; file chưa gửi thì người dùng chọn lại (khớp theo tên) hoặc lấy kết quả phần đã gửi.
   `bb_next` (chỉ tồn tại khi một lần đổi mã PIN bị dừng giữa chừng: `{salt, kdf, check, cfg, job}` của mã mới; `tryUnlock` dựa vào đó để biết dữ liệu đang được mã hoá bằng mã nào).
 - Đổi mã PIN (`changePin`) = mã hoá lại mọi cuộc họp trong MỘT giao dịch IndexedDB. Giữ nguyên thứ tự các bước trong hàm: nó bảo đảm app bị đóng ở bước nào cũng không mất dữ liệu.
 - Cache Storage: chỉ kho `bbh-shell-v1` (của `sw.js`).
